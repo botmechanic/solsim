@@ -1,13 +1,13 @@
 import type { EsimPlan } from '../../../shared/types';
 
-/** Local catalog until GET /plans is live. */
+/** Local catalog — prices kept tiny for easy faucet demos. */
 export const MOCK_PLANS: EsimPlan[] = [
   {
     planId: 'mock_th_5gb_30d',
     country: 'TH',
     dataMb: 5120,
     validityDays: 30,
-    priceLamports: '100000000', // 0.1 SOL on devnet
+    priceLamports: '10000000', // 0.01 SOL
     providerId: 'mock',
   },
   {
@@ -15,7 +15,7 @@ export const MOCK_PLANS: EsimPlan[] = [
     country: 'JP',
     dataMb: 3072,
     validityDays: 15,
-    priceLamports: '80000000', // 0.08 SOL
+    priceLamports: '8000000', // 0.008 SOL
     providerId: 'mock',
   },
 ];

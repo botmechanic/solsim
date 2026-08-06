@@ -8,14 +8,17 @@ import { StatusBar } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { WalletProvider } from './src/wallet/WalletContext';
-import { colors } from './src/theme/colors';
+import { OwnershipProvider } from './src/ownership/OwnershipContext';
+import { colors } from './src/theme/tokens';
 
 function App() {
   return (
     <SafeAreaProvider>
       <WalletProvider>
-        <StatusBar barStyle="light-content" backgroundColor={colors.bg} />
-        <RootNavigator />
+        <OwnershipProvider>
+          <StatusBar barStyle="light-content" backgroundColor={colors.bg} />
+          <RootNavigator />
+        </OwnershipProvider>
       </WalletProvider>
     </SafeAreaProvider>
   );

@@ -84,6 +84,10 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        // Emulator on Apple Silicon is arm64; skip x86 CMake flakes.
+        ndk {
+            abiFilters "arm64-v8a"
+        }
     }
     signingConfigs {
         debug {

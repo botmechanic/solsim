@@ -1,5 +1,5 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
-import { colors } from '../theme/colors';
+import { colors, fonts, radius, space } from '../theme/tokens';
 import { useWallet } from '../wallet/WalletContext';
 import { truncatePubkey } from '../lib/format';
 
@@ -12,8 +12,10 @@ export function ConnectWalletButton({ compact = false }: Props) {
 
   if (connecting) {
     return (
-      <Pressable style={[styles.button, compact && styles.compact]} disabled>
-        <ActivityIndicator color={colors.bg} />
+      <Pressable
+        style={[styles.button, compact && styles.compact]}
+        disabled>
+        <ActivityIndicator color={colors.accentText} />
       </Pressable>
     );
   }
@@ -21,12 +23,15 @@ export function ConnectWalletButton({ compact = false }: Props) {
   if (publicKey) {
     return (
       <Pressable
-        style={[styles.button, styles.connected, compact && styles.compact]}
+        style={({ pressed }) => [
+          styles.button,
+          styles.connected,
+          compact && styles.compact,
+          pressed && styles.pressed,
+        ]}
         onPress={disconnect}>
-        <Text style={styles.label}>
-          {compact
-            ? truncatePubkey(publicKey.toBase58())
-            : `Disconnect ${truncatePubkey(publicKey.toBase58())}`}
+        <Text style={[styles.label, styles.connectedLabel]}>
+          {truncatePubkey(publicKey.toBase58())}
         </Text>
       </Pressable>
     );
@@ -34,9 +39,13 @@ export function ConnectWalletButton({ compact = false }: Props) {
 
   return (
     <Pressable
-      style={[styles.button, compact && styles.compact]}
+      style={({ pressed }) => [
+        styles.button,
+        compact && styles.compact,
+        pressed && styles.pressed,
+      ]}
       onPress={connect}>
-      <Text style={styles.label}>Connect wallet</Text>
+      <Text style={styles.label}>{compact ? 'Connect' : 'Connect wallet'}</Text>
     </Pressable>
   );
 }
@@ -44,26 +53,32 @@ export function ConnectWalletButton({ compact = false }: Props) {
 const styles = StyleSheet.create({
   button: {
     backgroundColor: colors.accent,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderRadius: radius.md,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.md,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 44,
+    minHeight: 40,
   },
   compact: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    minHeight: 36,
+    paddingVertical: space.sm,
+    paddingHorizontal: space.md,
+    minHeight: 34,
   },
   connected: {
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
   },
+  pressed: {
+    opacity: 0.85,
+  },
   label: {
+    fontFamily: fonts.bodySemi,
+    color: colors.accentText,
+    fontSize: 13,
+  },
+  connectedLabel: {
     color: colors.text,
-    fontWeight: '700',
-    fontSize: 15,
   },
 });

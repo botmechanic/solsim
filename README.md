@@ -5,8 +5,10 @@ Hackathon MVP: buy a mock eSIM on **Solana devnet**, own it as an NFT, reveal a 
 ## Repo layout
 
 - `app/` — React Native (Android) client with Mobile Wallet Adapter
+- `api/` — Express mock catalog (`GET /health`, `GET /v1/plans`)
 - `docs/PRD.md` — evening hackathon scope
 - `docs/APP.md` — app structure and MWA wallet flow
+- `docs/DEMO.md` — 90-second judge demo script
 - `shared/` — shared TypeScript types
 
 ## Prerequisites
@@ -32,6 +34,15 @@ Install an MWA-compatible wallet on the emulator/device:
 
 Docs: [Solana Mobile overview](https://docs.solanamobile.com/get-started/overview) · [Invoke MWA directly](https://docs.solanamobile.com/get-started/react-native/invoke-mwa-sessions-directly)
 
+## Run the API (optional — app falls back to offline mock catalog)
+
+```bash
+cd api
+npm install
+npm run dev          # http://localhost:8787
+# curl http://localhost:8787/v1/plans
+```
+
 ## Run the app
 
 ```bash
@@ -42,13 +53,19 @@ npm start          # Metro
 npm run android
 ```
 
-Core bootstrap (done):
+Emulator reaches the API at `http://10.0.2.2:8787` (see `app/src/config/api.ts`).
+
+Demo loop (done for judging):
 
 - Bottom tabs: **Plans / My eSIMs / Wallet**
-- MWA `authorize` / reauthorize / disconnect (`@solana-mobile/mobile-wallet-adapter-protocol-web3js`)
-- Mock plan catalog (local) until `GET /plans` exists
+- MWA connect + **Buy with SOL** (memo + transfer on devnet)
+- Mock provision → encrypted local ownership vault → **owner-only QR reveal**
+- `FLAG_SECURE` on QR screen (Android screenshot block)
+- Demo mode fallback if faucet/SOL is unavailable
 - Identity: `{ name: 'Solsim', uri: 'https://solsim.so' }`, cluster `solana:devnet`
 
-## Next (per PRD)
+See [docs/DEMO.md](docs/DEMO.md) for the pitch script.
 
-API purchase saga → pay on devnet → mint NFT → My eSIMs + owner-only QR.
+## Next (post-hackathon)
+
+Purchase saga + Postgres, Metaplex collection mint, wire `decryptQrPayload` to `GET /esims/:mint/qr`.

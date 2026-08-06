@@ -1,31 +1,90 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { useCallback } from 'react';
+import {
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ConnectWalletButton } from '../components/ConnectWalletButton';
-import { colors } from '../theme/colors';
+import { EsimCard } from '../components/EsimCard';
+import { Button } from '../components/ui/Button';
+import { colors, radius, space, type } from '../theme/tokens';
 import { useWallet } from '../wallet/WalletContext';
+import { useOwnership } from '../ownership/OwnershipContext';
+import type { MyEsimsStackParamList } from '../navigation/types';
 
-export function MyEsimsScreen() {
+type Props = NativeStackScreenProps<MyEsimsStackParamList, 'MyEsimsList'>;
+
+export function MyEsimsScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
   const { publicKey } = useWallet();
+  const { esims, loading, refresh } = useOwnership();
+
+  const onRefresh = useCallback(() => {
+    refresh().catch(() => undefined);
+  }, [refresh]);
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        { paddingTop: Math.max(insets.top, space.lg) },
+      ]}>
       <Text style={styles.title}>My eSIMs</Text>
+      <Text style={styles.subtitle}>
+        Wallet-bound ownership. QR never appears in public metadata.
+      </Text>
+      <Button
+        label="How to install"
+        variant="ghost"
+        onPress={() => navigation.navigate('InstallGuide')}
+        style={styles.guide}
+      />
+
       {!publicKey ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyTitle}>Connect to see ownership</Text>
+          <Text style={styles.emptyTitle}>Connect to continue</Text>
           <Text style={styles.emptyBody}>
-            On-chain NFT ownership is the source of truth. Connect a wallet to
-            load your Solsim eSIMs.
+            Purchases for the connected wallet appear here.
           </Text>
           <ConnectWalletButton />
         </View>
       ) : (
-        <View style={styles.empty}>
-          <Text style={styles.emptyTitle}>No eSIMs yet</Text>
-          <Text style={styles.emptyBody}>
-            After a purchase, minted Solsim NFTs for this wallet will appear
-            here. QR reveal comes next.
-          </Text>
-        </View>
+        <FlatList
+          data={esims}
+          keyExtractor={item => item.mint}
+          refreshControl={
+            <RefreshControl
+              refreshing={loading}
+              onRefresh={onRefresh}
+              tintColor={colors.accent}
+            />
+          }
+          contentContainerStyle={[
+            styles.list,
+            esims.length === 0 && styles.flexGrow,
+          ]}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Text style={styles.emptyTitle}>No eSIMs yet</Text>
+              <Text style={styles.emptyBody}>
+                Buy a plan — your owned profile will show here for QR reveal.
+              </Text>
+            </View>
+          }
+          renderItem={({ item }) => (
+            <EsimCard
+              esim={item}
+              onPress={() =>
+                navigation.navigate('EsimQr', { mint: item.mint })
+              }
+            />
+          )}
+        />
       )}
     </View>
   );
@@ -35,31 +94,43 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,
-    padding: 20,
+    paddingHorizontal: space.xl,
   },
   title: {
+    ...type.title,
     color: colors.text,
-    fontSize: 28,
-    fontWeight: '800',
-    marginBottom: 20,
+    marginBottom: space.sm,
+  },
+  subtitle: {
+    ...type.caption,
+    color: colors.textSecondary,
+    marginBottom: space.sm,
+  },
+  guide: {
+    alignSelf: 'flex-start',
+    marginBottom: space.lg,
+  },
+  list: {
+    paddingBottom: space.xxxl,
+  },
+  flexGrow: {
+    flexGrow: 1,
   },
   empty: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: 20,
-    gap: 12,
+    backgroundColor: colors.surface,
+    padding: space.xl,
+    gap: space.md,
   },
   emptyTitle: {
+    ...type.headline,
     color: colors.text,
-    fontSize: 18,
-    fontWeight: '700',
   },
   emptyBody: {
-    color: colors.textMuted,
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 4,
+    ...type.caption,
+    color: colors.textSecondary,
+    marginBottom: space.sm,
   },
 });

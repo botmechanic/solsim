@@ -27,11 +27,13 @@ const PHANTOM_PLAY_STORE =
 
 type WalletContextValue = {
   publicKey: PublicKey | null;
+  authToken: string | null;
   connecting: boolean;
   balanceLamports: number | null;
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
   refreshBalance: () => Promise<void>;
+  setSession: (publicKey: PublicKey, authToken: string) => Promise<void>;
 };
 
 const WalletContext = createContext<WalletContextValue | null>(null);
@@ -177,22 +179,38 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, [authToken]);
 
+  const setSession = useCallback(
+    async (nextPublicKey: PublicKey, nextAuthToken: string) => {
+      setPublicKey(nextPublicKey);
+      setAuthToken(nextAuthToken);
+      await saveAuthorization({
+        authToken: nextAuthToken,
+        publicKey: nextPublicKey.toBase58(),
+      });
+    },
+    [],
+  );
+
   const value = useMemo(
     () => ({
       publicKey,
+      authToken,
       connecting,
       balanceLamports,
       connect,
       disconnect,
       refreshBalance,
+      setSession,
     }),
     [
       publicKey,
+      authToken,
       connecting,
       balanceLamports,
       connect,
       disconnect,
       refreshBalance,
+      setSession,
     ],
   );
 

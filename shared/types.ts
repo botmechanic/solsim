@@ -20,3 +20,11 @@ export interface EsimNft {
   status: EsimStatus;
   iccid: string;
 }
+
+/** Local vault record — QR never goes on-chain. */
+export interface OwnedEsim extends EsimNft {
+  planId: string;
+  paymentSignature: string;
+  purchasedAt: string;
+  qrPayload: string;
+}

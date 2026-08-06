@@ -1,8 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { EsimPlan } from '../../../shared/types';
-import { colors } from '../theme/colors';
+import { colors, radius, space, type } from '../theme/tokens';
+import { destinationFor } from '../theme/destinations';
 import {
-  countryLabel,
   formatDataMb,
   formatLamportsAsSol,
 } from '../lib/format';
@@ -13,52 +13,72 @@ type Props = {
 };
 
 export function PlanCard({ plan, onPress }: Props) {
+  const dest = destinationFor(plan.country);
+
   return (
-    <Pressable style={styles.card} onPress={onPress}>
-      <View style={styles.row}>
-        <Text style={styles.country}>{countryLabel(plan.country)}</Text>
-        <Text style={styles.price}>{formatLamportsAsSol(plan.priceLamports)}</Text>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
+      <View style={styles.codeBox}>
+        <Text style={styles.code}>{plan.country}</Text>
       </View>
-      <Text style={styles.meta}>
-        {formatDataMb(plan.dataMb)} · {plan.validityDays} days
+      <View style={styles.body}>
+        <Text style={styles.country}>{dest.name}</Text>
+        <Text style={styles.meta}>
+          {formatDataMb(plan.dataMb)} · {plan.validityDays} days
+        </Text>
+      </View>
+      <Text style={styles.price}>
+        {formatLamportsAsSol(plan.priceLamports)}
       </Text>
-      <Text style={styles.hint}>Mock provider · devnet</Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-  },
   row: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    gap: space.md,
+    paddingVertical: space.lg,
+    paddingHorizontal: space.lg,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: space.sm,
+  },
+  pressed: {
+    backgroundColor: colors.surfaceHover,
+  },
+  codeBox: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
+    backgroundColor: colors.bgElevated,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  code: {
+    ...type.label,
+    color: colors.text,
+  },
+  body: {
+    flex: 1,
   },
   country: {
+    ...type.headline,
     color: colors.text,
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  price: {
-    color: colors.accent,
-    fontSize: 16,
-    fontWeight: '700',
   },
   meta: {
-    color: colors.textMuted,
-    fontSize: 14,
-    marginBottom: 4,
+    ...type.caption,
+    color: colors.textSecondary,
+    marginTop: 2,
   },
-  hint: {
-    color: colors.tabInactive,
-    fontSize: 12,
+  price: {
+    ...type.bodyStrong,
+    color: colors.accent,
   },
 });

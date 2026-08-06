@@ -1,20 +1,25 @@
 import { useCallback } from 'react';
 import {
+  Linking,
   Pressable,
   RefreshControl,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ConnectWalletButton } from '../components/ConnectWalletButton';
-import { colors } from '../theme/colors';
+import { colors, radius, space, type } from '../theme/tokens';
 import { truncatePubkey } from '../lib/format';
+import { solscanAddressUrl } from '../lib/explorer';
 import { useWallet } from '../wallet/WalletContext';
 import { SOLANA_CHAIN } from '../config/identity';
-import { RPC_ENDPOINT } from '../config/solana';
 
 export function WalletScreen() {
+  const insets = useSafeAreaInsets();
   const { publicKey, balanceLamports, refreshBalance, connecting } =
     useWallet();
 
@@ -22,52 +27,90 @@ export function WalletScreen() {
     refreshBalance().catch(() => undefined);
   }, [refreshBalance]);
 
+  useFocusEffect(
+    useCallback(() => {
+      if (publicKey) {
+        refreshBalance().catch(() => undefined);
+      }
+    }, [publicKey, refreshBalance]),
+  );
+
   const sol =
-    balanceLamports === null ? '—' : `${(balanceLamports / 1e9).toFixed(4)} SOL`;
+    balanceLamports === null
+      ? '—'
+      : `${(balanceLamports / 1e9).toFixed(4)} SOL`;
+
+  const address = publicKey?.toBase58();
+
+  const onShareAddress = () => {
+    if (!address) {
+      return;
+    }
+    Share.share({ message: address, title: 'Solsim wallet' }).catch(
+      () => undefined,
+    );
+  };
 
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[
+        styles.content,
+        { paddingTop: Math.max(insets.top, space.lg) },
+      ]}
       refreshControl={
         <RefreshControl
           refreshing={connecting}
           onRefresh={onRefresh}
           tintColor={colors.accent}
         />
-      }>
+      }
+      showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>Wallet</Text>
-      <View style={styles.card}>
+      <Text style={styles.subtitle}>
+        Keys stay in your wallet app via Mobile Wallet Adapter.
+      </Text>
+
+      <View style={styles.panel}>
         <Text style={styles.label}>Status</Text>
         <Text style={styles.value}>
-          {publicKey ? 'Connected via MWA' : 'Not connected'}
+          {publicKey ? 'Connected' : 'Not connected'}
         </Text>
-        {publicKey ? (
+
+        {address ? (
           <>
             <Text style={[styles.label, styles.spaced]}>Address</Text>
-            <Text style={styles.mono}>{truncatePubkey(publicKey.toBase58(), 8, 8)}</Text>
-            <Text style={styles.full}>{publicKey.toBase58()}</Text>
+            <Text style={styles.mono}>{truncatePubkey(address, 6, 6)}</Text>
+            <Text style={styles.full} selectable>
+              {address}
+            </Text>
+            <Pressable onPress={onShareAddress} hitSlop={8}>
+              <Text style={styles.link}>Share address</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => Linking.openURL(solscanAddressUrl(address))}
+              hitSlop={8}>
+              <Text style={styles.link}>View on Solscan</Text>
+            </Pressable>
+
             <Text style={[styles.label, styles.spaced]}>Balance</Text>
             <Text style={styles.value}>{sol}</Text>
-            <Pressable style={styles.refresh} onPress={onRefresh}>
-              <Text style={styles.refreshLabel}>Refresh balance</Text>
+            <Pressable onPress={onRefresh} hitSlop={8}>
+              <Text style={styles.link}>Refresh</Text>
             </Pressable>
           </>
         ) : null}
+
         <View style={styles.cta}>
           <ConnectWalletButton />
         </View>
       </View>
-      <View style={styles.card}>
-        <Text style={styles.label}>Cluster</Text>
-        <Text style={styles.value}>{SOLANA_CHAIN}</Text>
-        <Text style={[styles.label, styles.spaced]}>RPC</Text>
-        <Text style={styles.full}>{RPC_ENDPOINT}</Text>
-        <Text style={[styles.hint, styles.spaced]}>
-          Uses Mobile Wallet Adapter
-          (@solana-mobile/mobile-wallet-adapter-protocol-web3js). Install Phantom
-          or the Solana Mobile mock wallet on the emulator to test connect.
-        </Text>
+
+      <View style={styles.metaPanel}>
+        <Text style={styles.label}>Network</Text>
+        <Text style={styles.metaValue}>Solana Devnet</Text>
+        <Text style={[styles.label, styles.spaced]}>Chain</Text>
+        <Text style={styles.metaValue}>{SOLANA_CHAIN}</Text>
       </View>
     </ScrollView>
   );
@@ -79,61 +122,68 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   content: {
-    padding: 20,
-    gap: 16,
+    paddingHorizontal: space.xl,
+    paddingBottom: space.xxxl,
   },
   title: {
+    ...type.title,
     color: colors.text,
-    fontSize: 28,
-    fontWeight: '800',
   },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
+  subtitle: {
+    ...type.caption,
+    color: colors.textSecondary,
+    marginTop: space.sm,
+    marginBottom: space.xl,
+  },
+  panel: {
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: 16,
+    backgroundColor: colors.surface,
+    padding: space.xl,
+  },
+  metaPanel: {
+    marginTop: space.lg,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.bgElevated,
+    padding: space.xl,
   },
   label: {
-    color: colors.textMuted,
-    fontSize: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
+    ...type.label,
+    color: colors.textTertiary,
   },
   spaced: {
-    marginTop: 16,
+    marginTop: space.xl,
   },
   value: {
+    ...type.headline,
     color: colors.text,
-    fontSize: 18,
-    fontWeight: '700',
-    marginTop: 4,
+    marginTop: space.sm,
   },
   mono: {
+    ...type.headline,
     color: colors.accent,
-    fontSize: 20,
-    fontWeight: '700',
-    marginTop: 4,
+    marginTop: space.sm,
   },
   full: {
-    color: colors.textMuted,
-    fontSize: 12,
-    marginTop: 6,
+    ...type.caption,
+    color: colors.textTertiary,
+    marginTop: space.sm,
   },
-  hint: {
-    color: colors.textMuted,
+  metaValue: {
+    ...type.bodyStrong,
+    color: colors.text,
+    marginTop: space.sm,
+  },
+  link: {
+    ...type.bodyStrong,
+    color: colors.accent,
     fontSize: 13,
-    lineHeight: 19,
+    marginTop: space.md,
   },
   cta: {
-    marginTop: 20,
-  },
-  refresh: {
-    marginTop: 12,
-    alignSelf: 'flex-start',
-  },
-  refreshLabel: {
-    color: colors.accent,
-    fontWeight: '600',
+    marginTop: space.xl,
   },
 });

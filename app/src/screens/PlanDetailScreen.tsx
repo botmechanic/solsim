@@ -1,118 +1,247 @@
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { getPlanById } from '../data/mockPlans';
-import { colors } from '../theme/colors';
+import { getPlanById } from '../data/plansCatalog';
+import { colors, space, type } from '../theme/tokens';
+import { destinationFor } from '../theme/destinations';
 import {
-  countryLabel,
   formatDataMb,
   formatLamportsAsSol,
 } from '../lib/format';
 import { useWallet } from '../wallet/WalletContext';
+import { Button } from '../components/ui/Button';
+import { Screen } from '../components/ui/Screen';
 import type { PlansStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<PlansStackParamList, 'PlanDetail'>;
 
-export function PlanDetailScreen({ route }: Props) {
+const FEE_BUFFER_LAMPORTS = 5000;
+
+export function PlanDetailScreen({ navigation, route }: Props) {
   const plan = getPlanById(route.params.planId);
-  const { publicKey, connect } = useWallet();
+  const { publicKey, connect, balanceLamports } = useWallet();
+  const [busy, setBusy] = useState(false);
 
   if (!plan) {
     return (
-      <View style={styles.container}>
+      <Screen>
         <Text style={styles.error}>Plan not found.</Text>
-      </View>
+      </Screen>
     );
   }
 
-  const onBuy = () => {
-    if (!publicKey) {
-      Alert.alert('Connect wallet', 'Connect Phantom via MWA before buying.', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Connect', onPress: () => connect() },
-      ]);
+  const dest = destinationFor(plan.country);
+  const price = Number(plan.priceLamports);
+  const canAfford =
+    balanceLamports !== null
+      ? balanceLamports >= price + FEE_BUFFER_LAMPORTS
+      : true;
+
+  const ensureWallet = async (): Promise<boolean> => {
+    if (publicKey) {
+      return true;
+    }
+    setBusy(true);
+    try {
+      await connect();
+      return true;
+    } catch {
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onBuy = async () => {
+    const ok = await ensureWallet();
+    if (!ok && !publicKey) {
       return;
     }
-    Alert.alert(
-      'Purchase coming next',
-      `Wallet ${publicKey.toBase58().slice(0, 8)}… is ready. Devnet payment + mint wires up after the API purchase saga.`,
-    );
+    if (balanceLamports !== null && !canAfford) {
+      Alert.alert(
+        'Need more SOL',
+        'Top up devnet SOL for purchase + fees, or use Demo mode.',
+      );
+      return;
+    }
+    navigation.navigate('Purchasing', { planId: plan.planId });
+  };
+
+  const onDemo = async () => {
+    if (!publicKey) {
+      Alert.alert(
+        'Connect wallet',
+        'Demo mode still binds the eSIM to a wallet.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Connect', onPress: () => connect() },
+        ],
+      );
+      return;
+    }
+    navigation.navigate('Purchasing', { planId: plan.planId, demoMode: true });
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{countryLabel(plan.country)}</Text>
+    <Screen style={styles.flex}>
+      <View style={styles.codeBox}>
+        <Text style={styles.code}>{plan.country}</Text>
+      </View>
+      <Text style={styles.title}>{dest.name}</Text>
       <Text style={styles.meta}>
-        {formatDataMb(plan.dataMb)} · {plan.validityDays} days validity
+        {formatDataMb(plan.dataMb)} · {plan.validityDays}-day validity
       </Text>
-      <View style={styles.panel}>
-        <Text style={styles.panelLabel}>Price (devnet)</Text>
-        <Text style={styles.price}>{formatLamportsAsSol(plan.priceLamports)}</Text>
+
+      <View style={styles.priceBlock}>
+        <Text style={styles.priceLabel}>Total before you sign</Text>
+        <Text style={styles.price}>
+          {formatLamportsAsSol(plan.priceLamports)}
+        </Text>
+
+        <View style={styles.breakdown}>
+          <View style={styles.row}>
+            <Text style={styles.rowLabel}>Plan (to treasury)</Text>
+            <Text style={styles.rowValue}>
+              {formatLamportsAsSol(plan.priceLamports)}
+            </Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.rowLabel}>Network fee (estimate)</Text>
+            <Text style={styles.rowValue}>
+              ~{formatLamportsAsSol(String(FEE_BUFFER_LAMPORTS))}
+            </Text>
+          </View>
+          <View style={[styles.row, styles.rowTotal]}>
+            <Text style={styles.totalLabel}>You authorize</Text>
+            <Text style={styles.totalValue}>
+              {formatLamportsAsSol(plan.priceLamports)} + fees
+            </Text>
+          </View>
+        </View>
+
         <Text style={styles.note}>
-          Mock eSIM profile. Same ownership model as production — QR is never
-          public on-chain.
+          Sign with Mobile Wallet Adapter. The profile QR stays off-chain —
+          only this wallet can reveal it.
         </Text>
       </View>
-      <Pressable style={styles.cta} onPress={onBuy}>
-        <Text style={styles.ctaLabel}>Buy with SOL</Text>
-      </Pressable>
-    </View>
+
+      <View style={styles.spacer} />
+
+      <Button
+        label={publicKey ? 'Buy with SOL' : 'Connect & buy'}
+        onPress={onBuy}
+        loading={busy}
+      />
+      <Button
+        label="Demo mode"
+        variant="secondary"
+        onPress={onDemo}
+        style={styles.demo}
+      />
+      <Text style={styles.fine}>
+        Prefer Buy with SOL for a live signature. Demo skips payment if the
+        faucet is slow.
+      </Text>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  flex: {
     flex: 1,
-    backgroundColor: colors.bg,
-    padding: 20,
   },
-  title: {
-    color: colors.text,
-    fontSize: 28,
-    fontWeight: '800',
-    marginBottom: 8,
-  },
-  meta: {
-    color: colors.textMuted,
-    fontSize: 16,
-    marginBottom: 24,
-  },
-  panel: {
+  codeBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 10,
     backgroundColor: colors.surface,
-    borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: 16,
-    marginBottom: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: space.lg,
   },
-  panelLabel: {
-    color: colors.textMuted,
-    fontSize: 13,
-    marginBottom: 4,
+  code: {
+    ...type.label,
+    color: colors.text,
+  },
+  title: {
+    ...type.hero,
+    color: colors.text,
+  },
+  meta: {
+    ...type.body,
+    color: colors.textSecondary,
+    marginTop: space.sm,
+    marginBottom: space.xxl,
+  },
+  priceBlock: {
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: colors.border,
+    paddingVertical: space.xl,
+  },
+  priceLabel: {
+    ...type.label,
+    color: colors.textTertiary,
+    marginBottom: space.sm,
   },
   price: {
-    color: colors.accent,
-    fontSize: 24,
-    fontWeight: '800',
-    marginBottom: 12,
+    ...type.hero,
+    color: colors.text,
+    marginBottom: space.lg,
   },
-  note: {
-    color: colors.textMuted,
-    fontSize: 14,
-    lineHeight: 20,
+  breakdown: {
+    marginBottom: space.lg,
+    gap: space.sm,
   },
-  cta: {
-    backgroundColor: colors.accent,
-    borderRadius: 14,
-    paddingVertical: 16,
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  ctaLabel: {
-    color: colors.bg,
-    fontWeight: '800',
-    fontSize: 16,
+  rowTotal: {
+    marginTop: space.sm,
+    paddingTop: space.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  rowLabel: {
+    ...type.caption,
+    color: colors.textSecondary,
+  },
+  rowValue: {
+    ...type.caption,
+    color: colors.text,
+    fontFamily: type.bodyStrong.fontFamily,
+  },
+  totalLabel: {
+    ...type.bodyStrong,
+    color: colors.text,
+  },
+  totalValue: {
+    ...type.bodyStrong,
+    color: colors.accent,
+  },
+  note: {
+    ...type.caption,
+    color: colors.textSecondary,
+  },
+  spacer: {
+    flex: 1,
+    minHeight: space.xxl,
+  },
+  demo: {
+    marginTop: space.md,
+  },
+  fine: {
+    ...type.caption,
+    color: colors.textTertiary,
+    marginTop: space.lg,
+    textAlign: 'center',
   },
   error: {
     color: colors.danger,
-    fontSize: 16,
+    ...type.body,
   },
 });

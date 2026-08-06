@@ -345,3 +345,34 @@ The evening is done when you can demo, without apology:
 5. Open the mock QR as the owner.
 
 Ship that loop. Everything else is bonus.
+
+---
+
+## 14. Gap vs original 5-week PRD (living backlog)
+
+### Shipped (hackathon-shaped)
+
+- MWA connect / reauth / disconnect + **EncryptedStorage** (auth + owned vault, AsyncStorage migrate)
+- Browse plans + plan detail with **total breakdown before sign**
+- Catalog from **`GET /v1/plans`** when API is up; offline mock fallback
+- Devnet purchase (memo + SOL transfer) + mock provision + local ownership vault
+- My eSIMs + owner-gated QR reveal
+- **`FLAG_SECURE`** on QR screen (Android native module)
+- **Install guide** screen (Android steps)
+- **Solscan** links (payment tx, wallet address)
+- **Share** address / LPA string
+- Wallet **balance refresh on focus**
+- Minimal **`/api`**: health, plans, MockProvider, log redactor, AES-256-GCM helpers
+
+### Next lowest-hanging (still high demo value)
+
+| Fruit | Why | Effort |
+| --- | --- | --- |
+| Postgres + migrate runner | Original §1.2 / purchase table | Medium |
+| Signed-message auth middleware | Original §5.1 | Medium |
+| Metaplex mint on devnet | Phantom-visible NFT | Medium–large |
+| `GET /esims/:mint/qr` with chain owner check | Wire existing `decryptQrPayload` | Medium |
+
+### Explicitly deferred (original phases 3–4)
+
+Marketplace / Auction House, Anchor escrow, real eSIM Access, mainnet, top-up, Postgres purchase saga, rate limits, country expansion beyond demo catalog.

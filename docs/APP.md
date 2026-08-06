@@ -22,9 +22,16 @@ shared/types.ts           # EsimPlan / EsimNft shared shapes
 
 | Tab | Purpose |
 | --- | --- |
-| Plans | Browse mock TH/JP plans; detail + “Buy” stub |
-| My eSIMs | Ownership placeholder (chain-backed list next) |
+| Plans | Browse plans → Buy with SOL (or Demo mode) → provisioning |
+| My eSIMs | Wallet-bound owned profiles → owner-only QR reveal |
 | Wallet | Connect via MWA, show pubkey + SOL balance |
+
+## Purchase path
+
+1. MWA `authorize` + `signAndSendTransactions` (memo + SOL transfer on **devnet**)
+2. Confirm payment via RPC
+3. Mock-provision ICCID + `LPA:` QR (local vault only)
+4. My eSIMs lists ownership; QR screen re-checks connected wallet == owner
 
 ## Wallet flow
 
