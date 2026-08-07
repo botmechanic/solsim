@@ -1,6 +1,15 @@
 import type { CountryCode, EsimPlan, EsimProvider } from '../types.js';
 
+/** 20 plans across 12 countries (meets “20 plans / ≥5 countries”). */
 const CATALOG: EsimPlan[] = [
+  {
+    planId: 'mock_th_1gb_7d',
+    country: 'TH',
+    dataMb: 1024,
+    validityDays: 7,
+    priceLamports: '4000000',
+    providerId: 'mock',
+  },
   {
     planId: 'mock_th_5gb_30d',
     country: 'TH',
@@ -18,11 +27,43 @@ const CATALOG: EsimPlan[] = [
     providerId: 'mock',
   },
   {
+    planId: 'mock_jp_10gb_30d',
+    country: 'JP',
+    dataMb: 10240,
+    validityDays: 30,
+    priceLamports: '15000000',
+    providerId: 'mock',
+  },
+  {
+    planId: 'mock_us_1gb_7d',
+    country: 'US',
+    dataMb: 1024,
+    validityDays: 7,
+    priceLamports: '4000000',
+    providerId: 'mock',
+  },
+  {
     planId: 'mock_us_5gb_30d',
     country: 'US',
     dataMb: 5120,
     validityDays: 30,
     priceLamports: '10000000',
+    providerId: 'mock',
+  },
+  {
+    planId: 'mock_us_10gb_30d',
+    country: 'US',
+    dataMb: 10240,
+    validityDays: 30,
+    priceLamports: '15000000',
+    providerId: 'mock',
+  },
+  {
+    planId: 'mock_kr_1gb_7d',
+    country: 'KR',
+    dataMb: 1024,
+    validityDays: 7,
+    priceLamports: '4000000',
     providerId: 'mock',
   },
   {
@@ -58,6 +99,22 @@ const CATALOG: EsimPlan[] = [
     providerId: 'mock',
   },
   {
+    planId: 'mock_fr_10gb_30d',
+    country: 'FR',
+    dataMb: 10240,
+    validityDays: 30,
+    priceLamports: '15000000',
+    providerId: 'mock',
+  },
+  {
+    planId: 'mock_de_1gb_7d',
+    country: 'DE',
+    dataMb: 1024,
+    validityDays: 7,
+    priceLamports: '4000000',
+    providerId: 'mock',
+  },
+  {
     planId: 'mock_de_5gb_30d',
     country: 'DE',
     dataMb: 5120,
@@ -71,6 +128,14 @@ const CATALOG: EsimPlan[] = [
     dataMb: 3072,
     validityDays: 15,
     priceLamports: '8000000',
+    providerId: 'mock',
+  },
+  {
+    planId: 'mock_gb_10gb_30d',
+    country: 'GB',
+    dataMb: 10240,
+    validityDays: 30,
+    priceLamports: '15000000',
     providerId: 'mock',
   },
   {

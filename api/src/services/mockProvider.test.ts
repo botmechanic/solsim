@@ -6,9 +6,9 @@ describe('MockProvider', () => {
   it('lists plans and filters by country', async () => {
     const provider = new MockProvider();
     const all = await provider.listPlans();
-    assert.equal(all.length, 12);
+    assert.equal(all.length, 20);
     const th = await provider.listPlans('TH');
-    assert.equal(th.length, 1);
+    assert.equal(th.length, 2);
     assert.equal(th[0]?.country, 'TH');
   });
 

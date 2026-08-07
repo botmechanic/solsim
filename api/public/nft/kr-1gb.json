@@ -1,0 +1,33 @@
+{
+  "name": "Solsim KR 1GB",
+  "symbol": "SOLSIM",
+  "description": "Hackathon demo eSIM plan for South Korea. QR is off-chain and owner-gated — never in this metadata.",
+  "image": "https://raw.githubusercontent.com/botmechanic/solsim/main/api/public/nft/kr-1gb.svg",
+  "attributes": [
+    {
+      "trait_type": "Country",
+      "value": "South Korea"
+    },
+    {
+      "trait_type": "Data",
+      "value": "1024 MB"
+    },
+    {
+      "trait_type": "Validity",
+      "value": "7 days"
+    },
+    {
+      "trait_type": "Provider",
+      "value": "Mock"
+    }
+  ],
+  "properties": {
+    "category": "image",
+    "files": [
+      {
+        "uri": "https://raw.githubusercontent.com/botmechanic/solsim/main/api/public/nft/kr-1gb.svg",
+        "type": "image/svg+xml"
+      }
+    ]
+  }
+}

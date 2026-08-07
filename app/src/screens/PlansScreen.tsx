@@ -1,8 +1,10 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -10,10 +12,11 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { EsimPlan } from '../../../shared/types';
+import type { CountryCode, EsimPlan } from '../../../shared/types';
 import { PlanCard } from '../components/PlanCard';
 import { ConnectWalletButton } from '../components/ConnectWalletButton';
 import { loadPlans } from '../data/plansCatalog';
+import { destinationFor } from '../theme/destinations';
 import { colors, space, type } from '../theme/tokens';
 import type { PlansStackParamList } from '../navigation/types';
 
@@ -24,6 +27,9 @@ export function PlansScreen({ navigation }: Props) {
   const [plans, setPlans] = useState<EsimPlan[]>([]);
   const [source, setSource] = useState<'api' | 'mock' | null>(null);
   const [loading, setLoading] = useState(true);
+  const [countryFilter, setCountryFilter] = useState<CountryCode | 'ALL'>(
+    'ALL',
+  );
 
   const refresh = useCallback(async (force = false) => {
     setLoading(true);
@@ -41,6 +47,21 @@ export function PlansScreen({ navigation }: Props) {
       refresh(false).catch(() => undefined);
     }, [refresh]),
   );
+
+  const countries = useMemo(() => {
+    const codes = [...new Set(plans.map(p => p.country))];
+    codes.sort((a, b) =>
+      destinationFor(a).name.localeCompare(destinationFor(b).name),
+    );
+    return codes;
+  }, [plans]);
+
+  const filtered = useMemo(() => {
+    if (countryFilter === 'ALL') {
+      return plans;
+    }
+    return plans.filter(p => p.country === countryFilter);
+  }, [plans, countryFilter]);
 
   return (
     <View
@@ -76,7 +97,49 @@ export function PlansScreen({ navigation }: Props) {
         ) : null}
       </View>
 
-      <Text style={styles.section}>Plans</Text>
+      <Text style={styles.section}>
+        Plans
+        {countryFilter !== 'ALL'
+          ? ` · ${destinationFor(countryFilter).name}`
+          : ` · ${plans.length}`}
+      </Text>
+
+      {countries.length > 0 ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chips}
+          style={styles.chipsRow}>
+          <Pressable
+            onPress={() => setCountryFilter('ALL')}
+            style={[
+              styles.chip,
+              countryFilter === 'ALL' && styles.chipActive,
+            ]}>
+            <Text
+              style={[
+                styles.chipText,
+                countryFilter === 'ALL' && styles.chipTextActive,
+              ]}>
+              All
+            </Text>
+          </Pressable>
+          {countries.map(code => {
+            const active = countryFilter === code;
+            return (
+              <Pressable
+                key={code}
+                onPress={() => setCountryFilter(code)}
+                style={[styles.chip, active && styles.chipActive]}>
+                <Text
+                  style={[styles.chipText, active && styles.chipTextActive]}>
+                  {code}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      ) : null}
 
       {loading && plans.length === 0 ? (
         <View style={styles.center}>
@@ -84,7 +147,7 @@ export function PlansScreen({ navigation }: Props) {
         </View>
       ) : (
         <FlatList
-          data={plans}
+          data={filtered}
           keyExtractor={item => item.planId}
           refreshControl={
             <RefreshControl
@@ -95,14 +158,16 @@ export function PlansScreen({ navigation }: Props) {
           }
           contentContainerStyle={[
             styles.list,
-            plans.length === 0 && styles.flexGrow,
+            filtered.length === 0 && styles.flexGrow,
           ]}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.empty}>
               <Text style={styles.emptyTitle}>No plans</Text>
               <Text style={styles.emptyBody}>
-                Pull to refresh, or start the API (`cd api && npm run dev`).
+                {countryFilter !== 'ALL'
+                  ? 'Try another country, or pull to refresh.'
+                  : 'Pull to refresh, or start the API (`cd api && npm run dev`).'}
               </Text>
             </View>
           }
@@ -186,6 +251,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.xl,
     paddingTop: space.xl,
     paddingBottom: space.md,
+  },
+  chipsRow: {
+    flexGrow: 0,
+    marginBottom: space.md,
+  },
+  chips: {
+    paddingHorizontal: space.xl,
+    gap: space.sm,
+    alignItems: 'center',
+  },
+  chip: {
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  chipActive: {
+    borderColor: colors.accentDim,
+    backgroundColor: colors.accentMuted,
+  },
+  chipText: {
+    ...type.caption,
+    color: colors.textSecondary,
+  },
+  chipTextActive: {
+    color: colors.accent,
+    fontFamily: type.bodyStrong.fontFamily,
   },
   list: {
     paddingHorizontal: space.xl,
