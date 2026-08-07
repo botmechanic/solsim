@@ -31,7 +31,7 @@ import type { PlansStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<PlansStackParamList, 'Purchasing'>;
 
-const STEPS: { id: PurchaseStep; label: string }[] = [
+const LIVE_STEPS: { id: PurchaseStep; label: string }[] = [
   { id: 'authorizing', label: 'Prepare payment' },
   { id: 'signing', label: 'Approve in Phantom' },
   { id: 'confirming', label: 'Confirm on-chain' },
@@ -40,11 +40,23 @@ const STEPS: { id: PurchaseStep; label: string }[] = [
   { id: 'complete', label: 'Ready' },
 ];
 
-function stepIndex(step: PurchaseStep | null): number {
+const DEMO_STEPS: { id: PurchaseStep; label: string }[] = [
+  { id: 'authorizing', label: 'Bind wallet' },
+  { id: 'signing', label: 'Skip payment' },
+  { id: 'confirming', label: 'Skip confirm' },
+  { id: 'minting', label: 'Skip mint' },
+  { id: 'provisioning', label: 'Provision mock profile' },
+  { id: 'complete', label: 'Ready' },
+];
+
+function stepIndex(
+  steps: { id: PurchaseStep; label: string }[],
+  step: PurchaseStep | null,
+): number {
   if (!step) {
     return -1;
   }
-  return STEPS.findIndex(item => item.id === step);
+  return steps.findIndex(item => item.id === step);
 }
 
 export function PurchasingScreen({ navigation, route }: Props) {
@@ -166,12 +178,13 @@ export function PurchasingScreen({ navigation, route }: Props) {
     );
   }
 
-  const activeIdx = stepIndex(step);
+  const activeIdx = stepIndex(demoMode ? DEMO_STEPS : LIVE_STEPS, step);
   const done = Boolean(mint);
   const dest = destinationFor(plan.country);
   const canRetryMint = Boolean(
     !done && paymentSignature && paidOwner && !demoMode,
   );
+  const steps = demoMode ? DEMO_STEPS : LIVE_STEPS;
 
   return (
     <Screen>
@@ -182,7 +195,7 @@ export function PurchasingScreen({ navigation, route }: Props) {
       <Text style={styles.meta}>{formatLamportsAsSol(plan.priceLamports)}</Text>
 
       <View style={styles.panel}>
-        {STEPS.map((item, index) => {
+        {steps.map((item, index) => {
           const complete = done || index < activeIdx;
           const current = !done && index === activeIdx;
           return (

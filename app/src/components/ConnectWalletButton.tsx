@@ -1,4 +1,4 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text } from 'react-native';
 import { colors, fonts, radius, space } from '../theme/tokens';
 import { useWallet } from '../wallet/WalletContext';
 import { truncatePubkey } from '../lib/format';
@@ -29,7 +29,22 @@ export function ConnectWalletButton({ compact = false }: Props) {
           compact && styles.compact,
           pressed && styles.pressed,
         ]}
-        onPress={disconnect}>
+        onPress={() => {
+          Alert.alert(
+            'Disconnect wallet?',
+            'You’ll need to reconnect before buying or revealing a QR.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Disconnect',
+                style: 'destructive',
+                onPress: () => {
+                  disconnect().catch(() => undefined);
+                },
+              },
+            ],
+          );
+        }}>
         <Text style={[styles.label, styles.connectedLabel]}>
           {truncatePubkey(publicKey.toBase58())}
         </Text>

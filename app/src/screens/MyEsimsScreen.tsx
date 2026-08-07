@@ -74,6 +74,10 @@ export function MyEsimsScreen({ navigation }: Props) {
               <Text style={styles.emptyBody}>
                 Buy a plan — your owned profile will show here for QR reveal.
               </Text>
+              <Button
+                label="Browse plans"
+                onPress={() => navigation.getParent()?.navigate('Plans')}
+              />
             </View>
           }
           renderItem={({ item }) => (

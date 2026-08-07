@@ -79,6 +79,10 @@ export function EsimQrScreen({ navigation, route }: Props) {
         />
       </View>
 
+      <Text style={styles.secureNote}>
+        Screenshots blocked while QR is open (FLAG_SECURE).
+      </Text>
+
       <View style={styles.panel}>
         <Text style={styles.label}>LPA payload</Text>
         <Text style={styles.payload} selectable>
@@ -159,9 +163,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     padding: space.lg,
     borderRadius: radius.lg,
-    marginBottom: space.xl,
+    marginBottom: space.md,
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  secureNote: {
+    ...type.caption,
+    color: colors.textTertiary,
+    textAlign: 'center',
+    marginBottom: space.xl,
   },
   panel: {
     borderRadius: radius.lg,
