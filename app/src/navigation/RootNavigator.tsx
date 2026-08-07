@@ -187,7 +187,8 @@ export function RootNavigator() {
               <TabLabel label="Wallet" focused={focused} />
             ),
           }}
-        />      </Tab.Navigator>
+        />
+      </Tab.Navigator>
     </NavigationContainer>
   );
 }
