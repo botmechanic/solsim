@@ -10,7 +10,7 @@ Android client for Solsim — **Seeker-first** travel eSIM with Solana wallet ch
 
 | Phase | App capability |
 |---|---|
-| **Hackathon (now)** | MWA connect, browse mock plans, devnet purchase stub, My eSIMs + QR placeholder |
+| **Hackathon (now)** | MWA connect, 20-plan catalog, devnet buy + mint, **Market tab (resale)**, My eSIMs + QR, Sell leftover |
 | **Seeker alpha** | Mainnet USDC, wholesale provider, **one-tap eSIM install**, dApp Store build |
 | **Launch** | SKR trip discounts, prepaid passes + staking opt-in, usage + expiry alerts |
 | **Scale** | Partner embed SDK, Seeker Genesis perks, compressed NFT list |
@@ -37,16 +37,19 @@ Android client for Solsim — **Seeker-first** travel eSIM with Solana wallet ch
 
 ```
 app/
-  App.tsx                 # SafeArea + WalletProvider + tabs
+  App.tsx                 # SafeArea + WalletProvider + OwnershipProvider + tabs
   polyfill.js             # crypto/Buffer before @solana/web3.js
   src/
-    config/               # APP_IDENTITY, cluster RPC
+    config/               # APP_IDENTITY, QuickNode RPC pool
     wallet/               # MWA authorize / reauthorize / disconnect
-    navigation/           # Plans stack + bottom tabs
-    screens/              # Plans, PlanDetail, MyEsims, Wallet
-    data/mockPlans.ts     # Local catalog until GET /plans
+    navigation/           # Market + Plans + My eSIMs + Wallet
+    screens/              # Marketplace, Plans, SellLeftover, MyEsims, Wallet, …
+    marketplace/          # listLeftover, buyListing, API client
+    ownership/            # Encrypted vault + listed status
+    purchase/             # Payment tx + mint request + mock provision
+    data/mockPlans.ts     # Offline catalog (20 plans)
     components/
-shared/types.ts           # EsimPlan / EsimNft shared shapes
+shared/types.ts           # EsimPlan / OwnedEsim / MarketplaceListing
 ```
 
 ### Planned additions (Phase 0.5+)
@@ -66,9 +69,10 @@ src/
 
 | Tab | Hackathon (shipped) | Production |
 |---|---|---|
-| **Plans** | Browse plans → Buy with SOL (or Demo mode) → provisioning | Live catalog from API; country search |
-| **My eSIMs** | Wallet-bound owned profiles → owner-only QR reveal | NFT-backed list; tap → install / usage / QR |
-| **Wallet** | MWA connect; pubkey + SOL balance | + USDC balance; SKR stake status |
+| **Market** *(first)* | Leftover listings; Demo / live buy from seller | Full secondary market + usage-backed remaining GB |
+| **Plans** | Browse 20 plans → Buy with SOL (or Demo) → provision | Live catalog; country search |
+| **My eSIMs** | Owned profiles → Reveal QR; **Sell leftover** | NFT-backed + install / live usage |
+| **Wallet** | MWA connect; pubkey + SOL; QuickNode credit | + USDC; SKR stake status |
 
 Future: **Settings** tab (notifications, language, support) in Phase 1.
 
@@ -76,13 +80,20 @@ Future: **Settings** tab (notifications, language, support) in Phase 1.
 
 ---
 
-## Purchase path
+## Purchase path (retail)
 
-1. MWA `authorize` + `signAndSendTransactions` (memo + SOL transfer on **devnet**)
+1. MWA `authorize` + sign payment (memo + SOL transfer on **devnet**); app submits via QuickNode RPC
 2. Confirm payment via RPC
 3. `POST /v1/mints` — API verifies payment and mints Metaplex NFT to the buyer
-4. Mock-provision ICCID + `LPA:` QR (local vault; mint address from API)
+4. Mock-provision ICCID + `LPA:` QR (local vault; mint address from API; mock `dataRemainingMb`)
 5. My eSIMs lists ownership; QR screen re-checks connected wallet == owner
+
+## Marketplace path (differentiatior)
+
+1. **Sell leftover** — Demo: soft `POST /listings` (`demo: true`). Live: deposit NFT to escrow (mint authority) then create listing
+2. **Market** tab lists public cards (no QR / ICCID)
+3. **Buy leftover** — Demo: soft claim. Live: buyer pays **seller** in SOL → `POST /listings/:id/purchase` → escrow `transferV1` → buyer vault + QR
+4. Seller’s local record marked `listed`; buyer becomes `owner` for reveal
 
 ## Wallet flow
 

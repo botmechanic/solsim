@@ -40,3 +40,4 @@ You do **not** need Metro or `adb reverse 8081` for `android:stable`.
 - Keys never touch Solsim — Mobile Wallet Adapter only
 - Live listings: NFT in escrow until buyer pays seller; QR stays off-chain
 - Mock cellular profile (say so) with a production-shaped ownership model
+- RPC via **QuickNode** (sponsor) — mention if judges ask about infra

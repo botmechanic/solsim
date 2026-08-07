@@ -1,8 +1,10 @@
 # Solsim
 
-**Seeker-native DeFi eSIM** — buy travel data with Solana, own it on-chain, reveal the install QR only if you still hold the wallet.
+**Seeker-native DeFi eSIM** — buy travel data with Solana, own it on-chain, and **resell leftover GB** instead of watching it expire.
 
-Hackathon MVP: browse plans, pay on **Solana devnet**, mint a **real Metaplex NFT** to the buyer, reveal a **mock LPA QR** only to the owning wallet. Production path: wholesale eSIM API, mainnet USDC/SKR, Solana dApp Store.
+Hackathon MVP: browse **20 plans / 12 countries**, pay on **Solana devnet**, mint a **real Metaplex NFT**, reveal a **mock LPA QR** only to the owning wallet, and run a **leftover-data marketplace** (list → pay seller → transfer NFT from escrow). Production path: wholesale eSIM API, mainnet USDC/SKR, Solana dApp Store.
+
+**One-liner:** Every traveler overbuys mobile data and eats the loss. Solsim makes your eSIM an NFT, so unused data has a resale market instead of an expiration date.
 
 **Sponsors infra:** Solana RPC via [QuickNode](https://www.quicknode.com) (devnet).
 
@@ -11,7 +13,7 @@ Hackathon MVP: browse plans, pay on **Solana devnet**, mint a **real Metaplex NF
 ```mermaid
 flowchart TB
   subgraph client ["Android app (React Native)"]
-    UI["Plans · My eSIMs · Wallet"]
+    UI["Market · Plans · My eSIMs · Wallet"]
     MWA["Mobile Wallet Adapter"]
     Vault["Encrypted local vault<br/>owner + LPA QR off-chain"]
     UI --> MWA
@@ -25,37 +27,45 @@ flowchart TB
   subgraph api ["API (Express · :8787)"]
     Plans["GET /v1/plans"]
     Mints["POST /v1/mints"]
+    Listings["GET·POST /v1/listings<br/>escrow deposit + claim"]
     Mock["MockProvider<br/>ICCID + LPA string"]
     Verify["Verify memo + SOL payment"]
     MintSvc["Metaplex mint<br/>(Umi + Token Metadata)"]
+    Transfer["Escrow → buyer NFT transfer"]
     Plans --> Mock
     Mints --> Verify --> MintSvc
     Mints --> Mock
+    Listings --> Verify
+    Listings --> Transfer
   end
 
   subgraph chain ["Solana devnet"]
     Tx["Payment tx<br/>memo + transfer"]
     NFT["eSIM entitlement NFT"]
+    Escrow["Escrow ATA<br/>mint authority holds listed NFT"]
     Meta["NFT metadata<br/>GitHub raw JSON/SVG<br/>no QR in metadata"]
     Rpc["RPC · QuickNode"]
     Tx --- Rpc
     NFT --- Rpc
+    Escrow --- Rpc
   end
 
-  UI -->|"catalog / mint"| api
+  UI -->|"catalog / mint / market"| api
   MWA <-->|"authorize · sign"| Phantom
   Phantom -->|"sign & submit"| Tx
   Verify -->|"confirm signature"| Tx
   MintSvc --> NFT
+  NFT -->|"list: deposit"| Escrow
+  Transfer -->|"buy: claim"| NFT
   NFT --> Meta
   Vault -.->|"reveal QR if<br/>connected wallet == owner"| UI
 ```
 
-**Invariant:** payment + NFT ownership are on-chain; the LPA / QR payload never goes in NFT metadata or public logs.
+**Invariant:** payment + NFT ownership are on-chain; the LPA / QR payload never goes in NFT metadata or public logs. On resale, the buyer pays the **seller**; the API only transfers the NFT from escrow after payment verifies.
 
 ## App screens (for judges)
 
-Demo path on Android — browse → buy/demo → owner-only QR → install guide.
+Demo path on Android — **open Market first** → buy leftover → or retail buy → owner-only QR → install guide.
 
 | Plans catalog | Plan detail |
 | :---: | :---: |
@@ -78,14 +88,14 @@ Demo path on Android — browse → buy/demo → owner-only QR → install guide
 | [docs/BUSINESS.md](./docs/BUSINESS.md) | Vision, GTM, Seeker strategy |
 | [docs/IMPLEMENTATION.md](./docs/IMPLEMENTATION.md) | Execution plan |
 | [docs/PRD.md](./docs/PRD.md) | Product requirements · hackathon scope |
-| [docs/APP.md](./docs/APP.md) | React Native client · MWA |
-| [docs/DEMO.md](./docs/DEMO.md) | 90-second judge demo script |
+| [docs/APP.md](./docs/APP.md) | React Native client · MWA · marketplace |
+| [docs/DEMO.md](./docs/DEMO.md) | 90-second judge demo script (lead with resale) |
 
 ## Repo layout
 
 - `app/` — React Native (Android) client with Mobile Wallet Adapter
-- `api/` — Express catalog + Metaplex mint (`GET /v1/plans`, `POST /v1/mints`)
-- `shared/` — Shared TypeScript types
+- `api/` — Express catalog, Metaplex mint, marketplace listings + escrow transfer
+- `shared/` — Shared TypeScript types (`OwnedEsim`, `MarketplaceListing`, …)
 - `docs/` — Business, product, and app specs
 
 ## Prerequisites
@@ -96,7 +106,7 @@ See Solana Mobile [development setup](https://docs.solanamobile.com/get-started/
 - JDK 17, Android SDK, emulator or device
 - MWA wallet: [Phantom](https://play.google.com/store/apps/details?id=app.phantom) or [Mock MWA Wallet](https://github.com/solana-mobile/mock-mwa-wallet)
 
-## Run the API (required for live Buy with SOL mint)
+## Run the API (required for live mint + marketplace)
 
 ```bash
 cd api
@@ -107,9 +117,11 @@ cp .env.example .env
 npm run create-mint-authority
 # → fund printed pubkey at https://faucet.solana.com (~1–2 SOL)
 # → set MINT_AUTHORITY_SECRET=... and TREASURY_PUBKEY (must match app)
+# → SOLANA_RPC_URL defaults to QuickNode in code; override in .env if needed
 
 npm run dev          # http://localhost:8787
 # curl http://localhost:8787/v1/plans
+# curl http://localhost:8787/v1/listings
 ```
 
 Emulator reaches the API at `http://10.0.2.2:8787`. Also:
@@ -119,7 +131,7 @@ adb reverse tcp:8787 tcp:8787
 adb reverse tcp:8081 tcp:8081
 ```
 
-Without the API (or mint authority), **Demo mode** still works offline. Live buys will fail at the mint step with a clear error.
+Without the API (or mint authority), **Demo mode** retail buy and **Demo** marketplace soft-listings still work once the API is up for listings. Offline catalog alone cannot list leftovers.
 
 NFT metadata JSON/SVG lives in `api/public/nft/` and is referenced via GitHub raw URLs so Phantom can fetch images after push.
 
@@ -131,7 +143,7 @@ NFT metadata JSON/SVG lives in `api/public/nft/` and is referenced via GitHub ra
 cd app
 npm install
 npm run android:stable
-# optional for live mint API:
+# required for marketplace + live mint:
 adb reverse tcp:8787 tcp:8787
 ```
 
@@ -149,17 +161,20 @@ adb reverse tcp:8787 tcp:8787
 
 ### Demo loop
 
-- Bottom tabs: **Plans / My eSIMs / Wallet**
-- MWA connect + **Buy with SOL** (memo + transfer on devnet)
+- Bottom tabs: **Market / Plans / My eSIMs / Wallet** (Market is first)
+- **Market** — seed leftover listing; Demo buy or live Buy with SOL to seller
+- **My eSIMs → Sell leftover** — soft-list (demo mint) or deposit NFT to escrow (live)
+- MWA connect + **Buy with SOL** (memo + transfer on devnet) for retail
 - API mints Metaplex NFT → Phantom Collectibles (devnet)
 - Mock QR in encrypted local vault → **owner-only reveal**
 - `FLAG_SECURE` on QR screen
-- **Demo mode** fallback if faucet/SOL/API is unavailable (still needs a connected wallet)
+- RPC via **QuickNode** (public Solana RPC fallbacks)
+- **Demo mode** fallback if faucet/SOL is unavailable (still needs a connected wallet)
 
 See [docs/DEMO.md](docs/DEMO.md) for the pitch script (including emulator + Mock MWA).
 
 ## Next
 
-**Post-hackathon (eng):** Postgres purchase saga, collection NFT, `GET /esims/:mint/qr` with chain owner check. See [PRD](./docs/PRD.md).
+**Post-hackathon (eng):** Postgres purchase saga, collection NFT, `GET /esims/:mint/qr` with chain owner check, Anchor escrow program. See [PRD](./docs/PRD.md).
 
 **Product:** Wholesale POC on Seeker → mainnet → dApp Store. See [BUSINESS.md](./docs/BUSINESS.md) and [IMPLEMENTATION.md](./docs/IMPLEMENTATION.md).

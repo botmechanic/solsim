@@ -35,9 +35,13 @@ Solsim makes global mobile data **permissionless, transparent, and interoperable
 
 ### 2.2 Positioning
 
-**Primary:** *The travel eSIM built for Seeker — pay with crypto, install in one tap.*
+**Primary:** *Travel eSIMs you own on Solana — unused data is money back, not breakage.*
+
+**Secondary (crypto):** *The Seeker-native eSIM — pay with wallet, install in one tap.*
 
 **Secondary (B2B):** *The connectivity API for crypto and cross-border apps.*
+
+**Pitch lead:** traveler loss on unused prepaid data → NFT ownership enables **resale**; do not lead with “eSIMs as NFTs.”
 
 We compete on **embeddability and programmable ownership**, not on being the cheapest gigabyte on day one.
 
