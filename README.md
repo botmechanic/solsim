@@ -1,17 +1,61 @@
 # Solsim
 
-**Seeker-native DeFi eSIM** — buy travel data with USDC/SKR, own it on-chain, install in one tap.
+**Seeker-native DeFi eSIM** — buy travel data with Solana, own it on-chain, reveal the install QR only if you still hold the wallet.
 
-Hackathon MVP: buy a mock eSIM on **Solana devnet**, mint a **real Metaplex NFT** to the buyer, reveal a mock QR only to the owning wallet. Production path: wholesale provider (1GLOBAL / eSIM Access), Solana dApp Store, mainnet USDC.
+Hackathon MVP: browse plans, pay on **Solana devnet**, mint a **real Metaplex NFT** to the buyer, reveal a **mock LPA QR** only to the owning wallet. Production path: wholesale eSIM API, mainnet USDC/SKR, Solana dApp Store.
+
+## Architecture
+
+```mermaid
+flowchart TB
+  subgraph client ["Android app (React Native)"]
+    UI["Plans · My eSIMs · Wallet"]
+    MWA["Mobile Wallet Adapter"]
+    Vault["Encrypted local vault<br/>owner + LPA QR off-chain"]
+    UI --> MWA
+    UI --> Vault
+  end
+
+  subgraph wallet ["Wallet app"]
+    Phantom["Phantom / Mock MWA Wallet"]
+  end
+
+  subgraph api ["API (Express · :8787)"]
+    Plans["GET /v1/plans"]
+    Mints["POST /v1/mints"]
+    Mock["MockProvider<br/>ICCID + LPA string"]
+    Verify["Verify memo + SOL payment"]
+    MintSvc["Metaplex mint<br/>(Umi + Token Metadata)"]
+    Plans --> Mock
+    Mints --> Verify --> MintSvc
+    Mints --> Mock
+  end
+
+  subgraph chain ["Solana devnet"]
+    Tx["Payment tx<br/>memo + transfer"]
+    NFT["eSIM entitlement NFT"]
+    Meta["NFT metadata<br/>GitHub raw JSON/SVG<br/>no QR in metadata"]
+  end
+
+  UI -->|"catalog / mint"| api
+  MWA <-->|"authorize · sign"| Phantom
+  Phantom -->|"sign & submit"| Tx
+  Verify -->|"confirm signature"| Tx
+  MintSvc --> NFT
+  NFT --> Meta
+  Vault -.->|"reveal QR if<br/>connected wallet == owner"| UI
+```
+
+**Invariant:** payment + NFT ownership are on-chain; the LPA / QR payload never goes in NFT metadata or public logs.
 
 ## Documentation
 
 | Doc | Contents |
-|---|---|
-| [docs/BUSINESS.md](./docs/BUSINESS.md) | Vision, GTM, Seeker strategy, wholesale partners, marketing |
-| [docs/IMPLEMENTATION.md](./docs/IMPLEMENTATION.md) | Business & marketing execution plan (90-day, workstreams, app sync) |
-| [docs/PRD.md](./docs/PRD.md) | Product requirements, technical phases, hackathon scope (§C) |
-| [docs/APP.md](./docs/APP.md) | React Native client, MWA, eSIM install, dApp Store |
+| --- | --- |
+| [docs/BUSINESS.md](./docs/BUSINESS.md) | Vision, GTM, Seeker strategy |
+| [docs/IMPLEMENTATION.md](./docs/IMPLEMENTATION.md) | Execution plan |
+| [docs/PRD.md](./docs/PRD.md) | Product requirements · hackathon scope |
+| [docs/APP.md](./docs/APP.md) | React Native client · MWA |
 | [docs/DEMO.md](./docs/DEMO.md) | 90-second judge demo script |
 
 ## Repo layout
@@ -80,20 +124,19 @@ adb reverse tcp:8081 tcp:8081
 adb reverse tcp:8787 tcp:8787
 ```
 
-Demo loop (done for judging):
+### Demo loop
 
 - Bottom tabs: **Plans / My eSIMs / Wallet**
 - MWA connect + **Buy with SOL** (memo + transfer on devnet)
 - API mints Metaplex NFT → Phantom Collectibles (devnet)
 - Mock QR in encrypted local vault → **owner-only reveal**
 - `FLAG_SECURE` on QR screen
-- Demo mode fallback if faucet/SOL/API is unavailable
-- Identity: `{ name: 'Solsim', uri: 'https://solsim.so' }`, cluster `solana:devnet`
+- **Demo mode** fallback if faucet/SOL/API is unavailable (still needs a connected wallet)
 
-See [docs/DEMO.md](docs/DEMO.md) for the pitch script.
+See [docs/DEMO.md](docs/DEMO.md) for the pitch script (including emulator + Mock MWA).
 
 ## Next
 
-**Post-hackathon (eng):** Postgres purchase saga, collection NFT, wire `decryptQrPayload` to `GET /esims/:mint/qr`. See [PRD §C](./docs/PRD.md#c--hackathon-mvp-scoped-build).
+**Post-hackathon (eng):** Postgres purchase saga, collection NFT, `GET /esims/:mint/qr` with chain owner check. See [PRD](./docs/PRD.md).
 
 **Product:** Wholesale POC on Seeker → mainnet → dApp Store. See [BUSINESS.md](./docs/BUSINESS.md) and [IMPLEMENTATION.md](./docs/IMPLEMENTATION.md).
