@@ -1,38 +1,33 @@
 # Solsim
 
-Hackathon MVP: buy a mock eSIM on **Solana devnet**, mint a **real Metaplex NFT** to the buyer, reveal a mock QR only to the owning wallet.
+**Seeker-native DeFi eSIM** — buy travel data with USDC/SKR, own it on-chain, install in one tap.
+
+Hackathon MVP: buy a mock eSIM on **Solana devnet**, mint a **real Metaplex NFT** to the buyer, reveal a mock QR only to the owning wallet. Production path: wholesale provider (1GLOBAL / eSIM Access), Solana dApp Store, mainnet USDC.
+
+## Documentation
+
+| Doc | Contents |
+|---|---|
+| [docs/BUSINESS.md](./docs/BUSINESS.md) | Vision, GTM, Seeker strategy, wholesale partners, marketing |
+| [docs/IMPLEMENTATION.md](./docs/IMPLEMENTATION.md) | Business & marketing execution plan (90-day, workstreams, app sync) |
+| [docs/PRD.md](./docs/PRD.md) | Product requirements, technical phases, hackathon scope (§C) |
+| [docs/APP.md](./docs/APP.md) | React Native client, MWA, eSIM install, dApp Store |
+| [docs/DEMO.md](./docs/DEMO.md) | 90-second judge demo script |
 
 ## Repo layout
 
 - `app/` — React Native (Android) client with Mobile Wallet Adapter
 - `api/` — Express catalog + Metaplex mint (`GET /v1/plans`, `POST /v1/mints`)
-- `docs/PRD.md` — evening hackathon scope
-- `docs/APP.md` — app structure and MWA wallet flow
-- `docs/DEMO.md` — 90-second judge demo script
-- `shared/` — shared TypeScript types
+- `shared/` — Shared TypeScript types
+- `docs/` — Business, product, and app specs
 
 ## Prerequisites
 
-Already expected on this machine (see Solana Mobile [development setup](https://docs.solanamobile.com/get-started/development-setup)):
+See Solana Mobile [development setup](https://docs.solanamobile.com/get-started/development-setup):
 
-- Node.js (RN 0.86 prefers `^20.19.4 || ^22.13.0 || >=24.3.0`; avoid odd Node 23 if builds flake)
+- Node.js (`^20.19.4 || ^22.13.0 || >=24.3.0`)
 - JDK 17, Android SDK, emulator or device
-- Shell env (added to `~/.zshrc`):
-
-```bash
-export JAVA_HOME="/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"
-export ANDROID_HOME="$HOME/Library/Android/sdk"
-export PATH="$JAVA_HOME/bin:$PATH:$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$ANDROID_HOME/cmdline-tools/latest/bin"
-```
-
-### MWA wallet for testing
-
-Install an MWA-compatible wallet on the emulator/device:
-
-- [Phantom](https://play.google.com/store/apps/details?id=app.phantom), or
-- [Mock MWA Wallet](https://github.com/solana-mobile/mock-mwa-wallet) (Solana Mobile docs)
-
-Docs: [Solana Mobile overview](https://docs.solanamobile.com/get-started/overview) · [Invoke MWA directly](https://docs.solanamobile.com/get-started/react-native/invoke-mwa-sessions-directly)
+- MWA wallet: [Phantom](https://play.google.com/store/apps/details?id=app.phantom) or [Mock MWA Wallet](https://github.com/solana-mobile/mock-mwa-wallet)
 
 ## Run the API (required for live Buy with SOL mint)
 
@@ -83,6 +78,8 @@ Demo loop (done for judging):
 
 See [docs/DEMO.md](docs/DEMO.md) for the pitch script.
 
-## Next (post-hackathon)
+## Next
 
-Postgres purchase saga, collection NFT, wire `decryptQrPayload` to `GET /esims/:mint/qr`.
+**Post-hackathon (eng):** Postgres purchase saga, collection NFT, wire `decryptQrPayload` to `GET /esims/:mint/qr`. See [PRD §C](./docs/PRD.md#c--hackathon-mvp-scoped-build).
+
+**Product:** Wholesale POC on Seeker → mainnet → dApp Store. See [BUSINESS.md](./docs/BUSINESS.md) and [IMPLEMENTATION.md](./docs/IMPLEMENTATION.md).

@@ -1,28 +1,254 @@
-# Solsim — Evening Hackathon PRD
+# Solsim — Product Requirements Document
 
-**Version:** 2.0 (hackathon) **Audience:** AI coding agent + solo engineer **Target:** Demoable vertical slice in one evening (~4–6 hours) **Repo layout:** monorepo — `/app` (React Native), `/api` (Node/Express)
+**Version:** 3.0  
+**Date:** August 6, 2026  
+**Status:** Draft  
+**Audience:** Engineering, Product, AI coding agents
 
----
-
-## 0. How to use this document
-
-**Goal tonight:** Wallet connects → browse a mock plan → “buy” on **devnet** → see an eSIM NFT → show a mock QR. That is the whole product for the demo.
-
-**For the agent:**
-
-- Treat §3 (Invariants) and §10 (Guardrails) as hard constraints.
-- Build only §8 tasks, in order. Do not start marketplace, top-up, Anchor, or a real provider.
-- When ambiguous, STOP and ask. Prefer the happy path + one obvious failure state over exhaustive edge cases.
-- Do not add dependencies not listed in §2 without asking.
-
-**For the human:**
-
-- Demo on **devnet** with MockProvider. Real eSIM Access and mainnet are out of scope tonight.
-- If time runs short, cut in this order: polish → QR screen polish → Metaplex mint (show DB-backed eSIM instead) → auth hardening. Never cut the browse → purchase → “I own this” loop.
+**Related docs:** [BUSINESS.md](./BUSINESS.md) (strategy & GTM) · [APP.md](./APP.md) (mobile client)
 
 ---
 
-## 1. System overview
+## How to read this document
+
+| Section | Purpose | Audience |
+|---|---|---|
+| **§A Product vision** | What we are building and why | Everyone |
+| **§B Technical direction** | Phased architecture, integrations, evolution from MVP | Eng + agents |
+| **§C Hackathon MVP** | Tonight’s scoped build — hard constraints | Agent + solo eng |
+
+**Agents:** For hackathon work, treat **§C invariants and guardrails as law**. Do not expand scope into §B Phase 1+ unless explicitly asked.
+
+---
+
+# §A — Product vision
+
+## A.1 Summary
+
+Solsim is a **Seeker-native DeFi eSIM platform**. Users browse travel data plans, pay with **USDC/SKR** via Mobile Wallet Adapter, receive real or mock eSIM profiles, and **own plan entitlements on-chain** (NFT model).
+
+**Near-term wedge:** Crypto-native Seeker owners who want instant eSIM activation in 190+ countries without card friction.
+
+**Long-term:** Embeddable connectivity API for wallets, travel apps, and Web3 protocols — “Stripe for data” on Solana.
+
+Full business strategy: [BUSINESS.md](./BUSINESS.md).
+
+## A.2 Problem
+
+1. **Payment friction** — card declines, FX, geo-blocked app stores at the airport
+2. **Fragmented accounts** — new provider app and email every trip
+3. **No portability** — unused data expires; plans cannot transfer
+4. **Partner gap** — wallets and travel apps lack telecom infrastructure to embed connectivity
+
+## A.3 Personas (priority order)
+
+| Persona | Phase | Success criteria |
+|---|---|---|
+| **Seeker traveler** | 0 | Pay USDC → one-tap install → connected in <5 min |
+| **Wallet user (partner-acquired)** | 1 | Buy plan inside Phantom/Backpack without leaving app |
+| **B2B integrator** | 1 | REST API live in <4 weeks; rev share on autopilot |
+| **DAO / event organizer** | 2 | Treasury buys bulk credits; attendees claim via wallet |
+
+## A.4 Product pillars
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      SOLSIM PLATFORM                        │
+├──────────────┬──────────────┬──────────────┬────────────────┤
+│ Seeker App   │ Partner API  │ DeFi Rails   │ eSIM Orchestr. │
+├──────────────┼──────────────┼──────────────┼────────────────┤
+│ Browse/ buy  │ White-label  │ USDC / SKR   │ SM-DP+ via     │
+│ One-tap      │ checkout     │ NFT ownship  │ wholesale API  │
+│ install      │ Webhooks     │ Refunds      │ Multi-MNO route│
+└──────────────┴──────────────┴──────────────┴────────────────┘
+```
+
+## A.5 Roadmap phases
+
+| Phase | Timeline | Deliverables |
+|---|---|---|
+| **0 — Hackathon MVP** | Now | Devnet purchase → mock eSIM → NFT → owner-only QR |
+| **0.5 — Seeker alpha** | +4–8 wks | Mainnet USDC, 1 wholesale provider, in-app install SDK, dApp Store |
+| **1 — Launch** | +3–6 mo | 100 countries, prepaid passes (3/6/12 mo), staking rewards beta, partner API |
+| **2 — Scale** | +6–12 mo | Partner SDK GA, 8 integrations, fiat on-ramp, compressed NFTs |
+| **3 — Platform** | +12–24 mo | Subscription SFTs, DePIN routing, enterprise M2M |
+
+## A.6 Functional requirements (product-level)
+
+### Consumer (P0 → P2)
+
+| ID | Requirement | Phase |
+|---|---|---|
+| F-001 | Browse plans by country with $/GB transparency | 0.5 |
+| F-002 | MWA wallet connect + signed-message auth | 0 |
+| F-003 | Pay USDC on Solana mainnet | 0.5 |
+| F-004 | eSIM install via Android eSIM API / partner SDK | 0.5 |
+| F-005 | Order history linked to wallet | 0 |
+| F-006 | Usage remaining + expiry | 1 |
+| F-007 | Top-up existing ICCID | 1 |
+| F-008 | SKR trip discount (non-staked SKUs) | 2 |
+| F-009 | Seeker Genesis Token perks | 0.5 |
+| F-010 | Fiat on-ramp fallback | 2 |
+| F-011 | Prepaid passes: 3 / 6 / 12 month pooled GB SKUs | 1 |
+| F-012 | eSIM Staking Rewards: lock plan SFT + optional SKR boost | 1 |
+| F-013 | Utilization + expiry alerts (data remaining, days left) | 1 |
+| F-014 | Breakage-aware finance tagging at ICCID expiry | 1 |
+
+### Partner API (P1)
+
+| ID | Requirement | Phase |
+|---|---|---|
+| P-001 | REST: catalog, quote, order, provision, usage | 1 |
+| P-002 | Signed webhooks + idempotency | 1 |
+| P-003 | Sandbox mirroring production catalog | 1 |
+| P-004 | Partner dashboard (GMV, rev share) | 2 |
+
+### Admin & ops (P0)
+
+| ID | Requirement | Phase |
+|---|---|---|
+| A-001 | Order mgmt + manual refund | 0.5 |
+| A-002 | MNO routing config per country | 1 |
+| A-003 | KYC tier enforcement | 0.5 |
+| A-004 | OFAC wallet screening | 0.5 |
+| A-005 | Staking rewards pool ledger + quarterly cap enforcement | 1 |
+| A-006 | Breakage / utilization reporting by SKU | 1 |
+
+## A.7 Non-functional requirements
+
+| Category | Target |
+|---|---|
+| API availability | 99.9% |
+| Provisioning latency | P95 < 60s post-payment |
+| Security | No private keys on server; QR encrypted at rest |
+| Privacy | GDPR-aligned; minimize PII on-chain |
+| Seeker install success | ≥95% one-tap on supported routes |
+
+---
+
+# §B — Technical direction
+
+## B.1 Architecture evolution
+
+### Phase 0 (hackathon — current repo)
+
+```
+React Native (Android) ──HTTPS──► Express API ──► MockProvider
+       │                               │
+       MWA / Phantom                   ├── PostgreSQL
+       │                               └── Solana devnet (Metaplex NFT)
+```
+
+### Phase 0.5 (Seeker alpha)
+
+```
+Seeker App (RN + eSIM SDK) ──► Solsim API ──► EsimProvider adapter
+       │                            │              ├── 1GLOBAL / eSIM Access
+       Seed Vault / MWA             │              └── SM-DP+ provision
+       Android EuiccManager         ├── PostgreSQL
+                                    ├── Payment listener (Solana mainnet)
+                                    └── Metaplex / cNFT mint
+```
+
+### Phase 1+ (platform)
+
+Add: partner API gateway, webhook dispatcher, treasury multisig, KYC service, usage polling from wholesale provider, **plan stake program (locked SFT)**, **rewards pool accrual**, rate limits, observability (order → payment → provision trace).
+
+## B.2 Wholesale provider integration
+
+**Interface** (extends hackathon `EsimProvider`):
+
+```ts
+interface EsimProvider {
+  listPlans(): Promise<EsimPlan[]>;
+  orderEsim(
+    planId: string,
+    idempotencyKey: string,
+  ): Promise<{
+    iccid: string;
+    qrPayload: string; // LPA:1$...
+    activationCode?: string;
+    validUntil: string;
+  }>;
+  getUsage?(iccid: string): Promise<{ dataMbRemaining: number; expiresAt: string }>;
+  topUp?(iccid: string, planId: string, idempotencyKey: string): Promise<void>;
+}
+```
+
+**Adapter priority:** `MockProvider` (Phase 0) → `EsimAccessProvider` or `OneGlobalProvider` (Phase 0.5) → multi-provider router (Phase 1).
+
+**Selection criteria for POC:** in-app Android install SDK, P95 provision time, wholesale $/GB, Seeker hardware compatibility. See [BUSINESS.md §4](./BUSINESS.md#4-wholesale-esim-supply).
+
+## B.3 Seeker mobile stack
+
+| Layer | Choice | Notes |
+|---|---|---|
+| Framework | React Native + TypeScript | Already in `/app` |
+| Wallet | `@solana-mobile/mobile-wallet-adapter-protocol-web3js` | Seed Vault on Seeker |
+| eSIM install | Partner SDK (1GLOBAL / eSIM Access) or `EuiccManager` | Prefer SDK; fallback QR |
+| Chain | Solana mainnet (devnet for hackathon) | USDC SPL; SKR when live |
+| NFT | Metaplex (Phase 0) → compressed NFT (Phase 2) | Ownership gates QR access |
+| Distribution | Solana dApp Store | See [APP.md](./APP.md) |
+
+## B.4 Payment flow (production)
+
+1. Client requests quote → server locks price (15 min)
+2. Client signs USDC transfer to treasury via MWA
+3. Server verifies tx on-chain (confirmed, amount, recipient, sender)
+4. Idempotent `POST /purchases` → async provision → encrypt LPA → mint NFT
+5. Client polls or receives push → triggers in-app eSIM install
+6. On failure after payment: auto USDC refund + `failed` status
+
+## B.5 Security invariants (all phases)
+
+1. **API never holds user private keys** — signing via MWA only
+2. **QR/LPA never stored plaintext** — AES-256-GCM at rest; never in logs or NFT metadata
+3. **On-chain ownership authoritative** for QR access — re-read owner before decrypt; RPC fail → 503
+4. **Purchases idempotent** on `idempotency_key`
+5. **Parameterized SQL only**; money as integer lamports
+6. **Secrets from env only**; OFAC screen on mainnet
+
+## B.6 Repo layout (target)
+
+```
+solsim/
+  app/           # React Native Seeker client
+  api/           # Express API (Phase 0 hackathon)
+  shared/        # Shared TypeScript types
+  docs/
+    BUSINESS.md  # Strategy & GTM
+    PRD.md       # This file
+    APP.md       # Mobile client spec
+```
+
+## B.7 Technology choices
+
+| Layer | Phase 0 (hackathon) | Phase 0.5+ |
+|---|---|---|
+| Mobile | RN + MWA | + eSIM partner SDK |
+| API | Express + TS + zod | + rate limit, webhooks |
+| DB | PostgreSQL + pg | Same |
+| Chain | Solana devnet | Solana mainnet |
+| NFT | `@metaplex-foundation/js` | cNFT at scale |
+| Provider | MockProvider | 1GLOBAL / eSIM Access |
+
+## B.8 Open technical decisions
+
+| # | Question | Default if no decision |
+|---|---|---|
+| 1 | NFT vs. SFT for plan entitlement | NFT (Phase 0–1) |
+| 2 | Single provider vs. router | Single for alpha; router Phase 1 |
+| 3 | Inline async provision vs. job queue | Inline for MVP; queue Phase 1 |
+| 4 | Indexer vs. direct RPC for payment verify | Direct RPC (MVP) |
+
+---
+
+# §C — Hackathon MVP (scoped build)
+
+> **Goal tonight:** Wallet connects → browse mock plan → “buy” on **devnet** → see eSIM NFT → show mock QR.  
+> Real eSIM Access, mainnet, and Seeker SDK are **out of scope tonight**.
+
+## C.1 System overview
 
 ```
 ┌─────────────────────────────────────────┐
@@ -49,46 +275,40 @@
                    └──────────────────┘
 ```
 
-**Trust model:** Chain ownership is authoritative for QR access. DB indexes purchases and holds the encrypted mock QR. No real money, no real eSIM inventory tonight.
+**Trust model:** Chain ownership is authoritative for QR access. DB indexes purchases and holds encrypted mock QR. No real money, no real eSIM inventory tonight.
 
----
-
-## 2. Locked technology choices
+## C.2 Locked technology choices (hackathon)
 
 Do not substitute. Do not add.
 
-| Layer      | Choice                                                 |
-| ---------- | ------------------------------------------------------ |
-| Mobile     | React Native + TypeScript                              |
-| Navigation | `@react-navigation/native` + bottom-tabs               |
-| Wallet     | `@solana-mobile/mobile-wallet-adapter-protocol-web3js` |
-| Chain SDK  | `@solana/web3.js`                                      |
-| NFT        | `@metaplex-foundation/js` (or umi equivalent)          |
-| API        | Express + TypeScript                                   |
-| DB         | PostgreSQL + `pg` (parameterized only)                 |
-| Cluster    | **devnet only**                                        |
-| Validation | `zod`                                                  |
+| Layer | Choice |
+|---|---|
+| Mobile | React Native + TypeScript |
+| Navigation | `@react-navigation/native` + bottom-tabs |
+| Wallet | `@solana-mobile/mobile-wallet-adapter-protocol-web3js` |
+| Chain SDK | `@solana/web3.js` |
+| NFT | `@metaplex-foundation/js` (or umi equivalent) |
+| API | Express + TypeScript |
+| DB | PostgreSQL + `pg` (parameterized only) |
+| Cluster | **devnet only** |
+| Validation | `zod` |
 
-**Explicitly out of scope tonight:** Anchor programs, marketplace, top-up, real eSIM provider, mainnet, iOS, ORMs, GraphQL, IPFS, Firebase, any token/coin.
+**Explicitly out of scope tonight:** Anchor, marketplace, top-up, real eSIM provider, mainnet, iOS, ORMs, GraphQL, IPFS, Firebase, tokens.
 
----
+## C.3 Invariants
 
-## 3. Invariants
+1. API never holds, requests, logs, or transmits user private keys
+2. QR payload never stored plaintext, never logged, never returned except to verified on-chain owner
+3. On-chain ownership authoritative for QR access
+4. Purchases idempotent on `idempotency_key`
+5. All SQL parameterized
+6. Money values are integers (lamports)
+7. Secrets only from `process.env`
 
-1. **The API never holds, requests, logs, or transmits a user private key or seed phrase.** Signing only via MWA / wallet.
-2. **QR payload is never stored in plaintext**, never logged, never returned except `GET /esims/:mint/qr` to the verified on-chain owner.
-3. **On-chain ownership is authoritative** for QR access. Re-read owner from chain before returning QR. On RPC failure → 503, not DB fallback.
-4. **Purchases are idempotent** on `idempotency_key`.
-5. **All SQL is parameterized.**
-6. **Money values are integers** (lamports as `bigint` / string on the wire). No floats.
-7. **Secrets only from** `process.env`.
-
----
-
-## 4. Domain model (minimal)
+## C.4 Domain model
 
 ```ts
-type CountryCode = 'TH' | 'JP'; // two countries is enough for demo
+type CountryCode = 'TH' | 'JP';
 
 type EsimStatus = 'provisioning' | 'active' | 'failed';
 
@@ -97,174 +317,93 @@ interface EsimPlan {
   country: CountryCode;
   dataMb: number;
   validityDays: number;
-  priceLamports: string; // fixed demo price on devnet
+  priceLamports: string;
   providerId: 'mock';
 }
 
 interface EsimNft {
   mint: string;
-  owner: string; // from chain
+  owner: string;
   country: CountryCode;
   dataMb: number;
   validUntil: string;
   status: EsimStatus;
-  iccid: string; // mock id, not secret
+  iccid: string;
 }
 ```
 
-One or two hard-coded plans in MockProvider is enough. No marketplace listing type.
+## C.5 API contract
 
----
+Base: `http://localhost:3000/v1`. JSON only.
 
-## 5. API contract
-
-Base: `http://localhost:3000/v1` for the hackathon. JSON only.
-
-### 5.1 Auth
+### Auth
 
 ```
 X-Wallet: <base58 pubkey>
-X-Signature: <base58 sig of message below>
+X-Signature: <base58 sig>
 X-Timestamp: <unix seconds>
 ```
 
-Signed message (exact, no trailing newline):
+Message: `solsim-auth:<pubkey>:<unix_timestamp>` (no trailing newline). Reject if `|now - timestamp| > 300`.
 
-```
-solsim-auth:<pubkey>:<unix_timestamp>
-```
+### Endpoints
 
-Verify with `nacl.sign.detached.verify`. Reject if `|now - timestamp| > 300`.
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/health` | no | Liveness |
+| GET | `/plans` | no | Mock catalog |
+| POST | `/purchases` | yes | Buy eSIM (async) |
+| GET | `/purchases/:id` | yes | Poll status |
+| GET | `/esims` | yes | Caller's eSIMs |
+| GET | `/esims/:mint/qr` | yes | Decrypted QR (owner only) |
 
-### 5.2 Endpoints (only these)
-
-| Method | Path                | Auth | Purpose                   |
-| ------ | ------------------- | ---- | ------------------------- |
-| GET    | `/health`           | no   | Liveness                  |
-| GET    | `/plans`            | no   | Mock catalog              |
-| POST   | `/purchases`        | yes  | Buy eSIM (async)          |
-| GET    | `/purchases/:id`    | yes  | Poll status               |
-| GET    | `/esims`            | yes  | Caller's eSIMs            |
-| GET    | `/esims/:mint/qr`   | yes  | Decrypted QR (owner only) |
-
-### 5.3 `POST /purchases`
+### `POST /purchases`
 
 ```jsonc
-// request
-{
-  "planId": "mock_th_5gb_30d",
-  "idempotencyKey": "uuid-v4",
-  "paymentSignature": "base58 txn sig" // SOL sent to treasury on devnet
-}
-// 202
-{ "purchaseId": "uuid", "status": "provisioning" }
+{ "planId": "mock_th_5gb_30d", "idempotencyKey": "uuid-v4", "paymentSignature": "base58" }
+// 202 → { "purchaseId": "uuid", "status": "provisioning" }
 ```
 
-Server order:
+Server: idempotency → verify devnet payment → persist → async MockProvider → encrypt QR → mint NFT → `active`.
 
-1. Idempotency lookup → return existing if found.
-2. Verify payment on **devnet**: confirmed, ≥ plan lamports, to treasury, from `X-Wallet`.
-3. Persist purchase as `provisioning`, return 202, finish async: MockProvider → encrypt QR → mint NFT → `active`.
+### `GET /esims/:mint/qr`
 
-Client polls every 2–3s for up to ~90s, then shows “still working / check My eSIMs.”
+Fetch mint owner from chain → `owner === X-Wallet` else 403 → decrypt. RPC fail → 503.
 
-### 5.4 `GET /esims/:mint/qr`
-
-1. Fetch mint owner from chain. 2. `owner === X-Wallet` else 403. 3. Decrypt and return. RPC fail → 503.
-
-```jsonc
-{ "mint": "...", "qrPayload": "LPA:1$mock.solsim.so$DEMO123", "iccid": "8900..." }
-```
-
-### 5.5 Errors
-
-```jsonc
-{ "error": { "code": "NOT_OWNER", "message": "Human readable.", "retriable": false } }
-```
-
-Keep codes small: `UNAUTHORIZED`, `SIGNATURE_INVALID`, `SIGNATURE_EXPIRED`, `NOT_OWNER`, `INSUFFICIENT_PAYMENT`, `PAYMENT_NOT_CONFIRMED`, `PROVISIONING_FAILED`, `INTERNAL`. Never put QR / secrets / stack traces in messages.
-
----
-
-## 6. Mock provider
+## C.6 Mock provider
 
 ```ts
-interface EsimProvider {
-  listPlans(): Promise<EsimPlan[]>;
-  orderEsim(
-    planId: string,
-    idemKey: string,
-  ): Promise<{ iccid: string; qrPayload: string; validUntil: string }>;
-}
-
 class MockProvider implements EsimProvider {
-  // 2 static plans; orderEsim returns LPA:1$mock... and a fake ICCID
+  // 2 static plans; orderEsim returns LPA:1$mock... and fake ICCID
 }
 ```
 
-No live provider adapter tonight. `PROVIDER_MODE=mock` only.
+`PROVIDER_MODE=mock` only.
 
----
+## C.7 Encryption
 
-## 7. Secrets and encryption
+- AES-256-GCM; key = `QR_ENCRYPTION_KEY` (32 bytes base64)
+- Decrypt only in owner-verified QR handler
+- Redact logs matching `/LPA:1\$/` or sensitive key names
 
-- QR at rest: AES-256-GCM. Key = `QR_ENCRYPTION_KEY` (32 bytes base64). Store `iv`, `authTag`, `ciphertext`.
-- Decrypt only in `decryptQrPayload()`, called only from `GET /esims/:mint/qr`.
-- Redact log values matching `/LPA:1\$/` or keys named `qr`, `qrPayload`, `secret`, `key`.
+## C.8 Evening task graph
 
----
+| ID | Task | Done when |
+|---|---|---|
+| 1 | Monorepo scaffold | typecheck passes |
+| 2 | Postgres + `/health` | migrate + 200 |
+| 3 | Auth middleware | sig tests pass |
+| 4 | MockProvider + `GET /plans` | 2 plans |
+| 5 | RN: tabs + MWA | Phantom connects |
+| 6 | Browse plans UI | list + detail |
+| 7 | Encrypt/decrypt helpers | round-trip test |
+| 8 | Payment + mint + purchase | happy path E2E |
+| 9 | Purchase UI + poll | user can buy |
+| 10 | My eSIMs + QR | owner sees QR |
 
-## 8. Evening task graph
+**Do not start:** marketplace, top-up, Anchor, real provider, mainnet.
 
-Build in order. Stop when the demo loop works; polish only if time remains.
-
-| ID  | Task                                      | Depends | Done when                                              |
-| --- | ----------------------------------------- | ------- | ------------------------------------------------------ |
-| 1   | Monorepo scaffold (`/app`, `/api`, shared types) | —    | `typecheck` passes                                     |
-| 2   | Postgres tables + Express `/health`       | 1       | migrate + health 200                                   |
-| 3   | Auth middleware                           | 2       | valid/expired/bad sig covered                          |
-| 4   | MockProvider + `GET /plans`               | 2       | 2 plans returned                                       |
-| 5   | RN app: tabs + brand + MWA connect        | 1       | Phantom connects on device (or emulator if needed)     |
-| 6   | Browse plans UI                           | 4, 5    | list + detail render                                   |
-| 7   | Encrypt/decrypt QR helpers                | 2       | round-trip test                                        |
-| 8   | Payment verify + mint + purchase handler  | 3, 4, 7 | one happy-path purchase on devnet end-to-end           |
-| 9   | Purchase UI + poll screen                 | 6, 8    | user can buy from the app                              |
-| 10  | My eSIMs + QR screen                      | 8, 9    | owner sees QR; non-owner would 403                     |
-
-**Optional if time left:** nicer empty/error states, truncated pubkey + SOL balance, `FLAG_SECURE` on QR screen, README demo script.
-
-**Do not start:** marketplace, listings table usage, top-up, Anchor, real provider, mainnet, rate limits, admin tools.
-
----
-
-## 9. Simplified purchase flow
-
-Happy path only for the demo (still persist state so retries don’t double-order):
-
-```
-payment_verified → provisioned (MockProvider) → secret_stored → minted → complete
-```
-
-On any hard failure after payment: mark `failed`, show a clear error in the app. No automated refund tonight — note it verbally in the demo (“devnet SOL; we’d refund in prod”).
-
-Idempotency on `idempotency_key` is required. A full retry worker is nice-to-have; an inline async continuation after `POST /purchases` is enough for the evening.
-
----
-
-## 10. Guardrails — never do these
-
-1. Never store/log/transmit private keys or seed phrases.
-2. Never return QR without a fresh on-chain owner check.
-3. Never interpolate SQL strings.
-4. Never use floats for money.
-5. Never add marketplace, top-up, tokens, or a real provider tonight.
-6. Never target mainnet.
-7. Never commit `.env`, keypairs, or credentials.
-8. Never claim the mock QR is a real installable eSIM in the pitch — say “mock profile; same ownership model.”
-
----
-
-## 11. Database schema
+## C.9 Database schema
 
 ```sql
 CREATE TABLE users (
@@ -279,7 +418,7 @@ CREATE TABLE purchases (
   plan_id           TEXT NOT NULL,
   price_lamports    BIGINT NOT NULL,
   payment_signature VARCHAR(88) UNIQUE NOT NULL,
-  status            TEXT NOT NULL, -- provisioning | active | failed
+  status            TEXT NOT NULL,
   nft_mint          VARCHAR(44) UNIQUE,
   iccid             VARCHAR(22),
   last_error        TEXT,
@@ -297,54 +436,48 @@ CREATE TABLE esim_secrets (
 );
 ```
 
-### NFT metadata
-
-```jsonc
-{
-  "name": "Solsim TH 5GB",
-  "symbol": "SOLSIM",
-  "description": "Hackathon demo eSIM plan for Thailand.",
-  "image": "https://solsim.so/nft/th-5gb.png",
-  "attributes": [
-    { "trait_type": "Country", "value": "Thailand" },
-    { "trait_type": "Data", "value": "5120 MB" },
-    { "trait_type": "Provider", "value": "Mock" },
-  ],
-}
-```
-
-QR payload must never appear in metadata.
-
----
-
-## 12. Environment
+## C.10 Environment
 
 ```bash
 NODE_ENV=development
 DATABASE_URL=
-SOLANA_RPC_URL=            # devnet RPC
+SOLANA_RPC_URL=
 SOLANA_CLUSTER=devnet
 TREASURY_PUBKEY=
-MINT_AUTHORITY_SECRET=     # mint authority only; no user funds
-QR_ENCRYPTION_KEY=         # base64, 32 bytes
+MINT_AUTHORITY_SECRET=
+QR_ENCRYPTION_KEY=
 PROVIDER_MODE=mock
 ```
 
-A fresh clone with `PROVIDER_MODE=mock` should run without eSIM vendor credentials.
+## C.11 Guardrails — never do these
+
+1. Never store/log/transmit private keys
+2. Never return QR without fresh on-chain owner check
+3. Never interpolate SQL strings
+4. Never use floats for money
+5. Never add marketplace, top-up, tokens, or real provider tonight
+6. Never target mainnet
+7. Never commit `.env` or keypairs
+8. Never claim mock QR is real installable eSIM — say “mock profile; same ownership model”
+
+## C.12 Definition of done (hackathon)
+
+1. Connect Phantom
+2. Browse at least one plan
+3. Pay on devnet and complete purchase
+4. See eSIM under My eSIMs (NFT mint visible)
+5. Open mock QR as owner
 
 ---
 
-## 13. Definition of done (tonight)
+## Document history
 
-The evening is done when you can demo, without apology:
-
-1. Connect Phantom.
-2. Browse at least one plan.
-3. Pay on **devnet** and complete a purchase.
-4. See the eSIM under My eSIMs (NFT mint visible).
-5. Open the mock QR as the owner.
-
-Ship that loop. Everything else is bonus.
+| Version | Date | Changes |
+|---|---|---|
+| 2.0 | 2026-08-06 | Hackathon scope |
+| 3.0 | 2026-08-06 | Added product vision (§A), technical direction (§B), Seeker integration path; preserved hackathon as §C |
+| 3.1 | 2026-08-06 | Prepaid passes + eSIM staking rewards; breakage tracking requirements |
+| 3.2 | 2026-08-06 | Gap vs shipped hackathon backlog (§14) |
 
 ---
 

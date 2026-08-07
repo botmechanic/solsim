@@ -1,6 +1,37 @@
-# Solsim app (React Native)
+# Solsim mobile app
 
-Android client for the evening hackathon demo. Uses [Mobile Wallet Adapter](https://docs.solanamobile.com/get-started/react-native/invoke-mwa-sessions-directly) so keys never leave the wallet app.
+Android client for Solsim — **Seeker-first** travel eSIM with Solana wallet checkout. Uses [Mobile Wallet Adapter](https://docs.solanamobile.com/get-started/react-native/invoke-mwa-sessions-directly) so keys never leave the wallet (Phantom on dev; Seed Vault on Seeker).
+
+**Related:** [PRD.md §B](./PRD.md#b--technical-direction) (technical phases) · [BUSINESS.md §3](./BUSINESS.md#3-seeker-integration-primary-distribution) (Seeker GTM)
+
+---
+
+## Product direction
+
+| Phase | App capability |
+|---|---|
+| **Hackathon (now)** | MWA connect, browse mock plans, devnet purchase stub, My eSIMs + QR placeholder |
+| **Seeker alpha** | Mainnet USDC, wholesale provider, **one-tap eSIM install**, dApp Store build |
+| **Launch** | SKR trip discounts, prepaid passes + staking opt-in, usage + expiry alerts |
+| **Scale** | Partner embed SDK, Seeker Genesis perks, compressed NFT list |
+
+---
+
+## Target device: Solana Seeker
+
+| Seeker feature | Solsim integration |
+|---|---|
+| **Seed Vault** | Primary signing path on production Seeker builds |
+| **MWA** | Wallet sessions for Phantom (dev) and Seeker wallets |
+| **eSIM slot** | Install travel profile via partner SDK or `EuiccManager` |
+| **Seeker ID (.skr)** | Device attestation for Genesis Token perks (Phase 0.5) |
+| **dApp Store** | Distribution channel; no OEM pre-install |
+
+**Hardware constraint:** Seeker has **one active eSIM profile** on the eSIM slot. UX must support replace + top-up flows, not multi-profile switching.
+
+**Complement positioning:** Helium Mobile on nano SIM (US daily driver) + Solsim on eSIM slot (travel abroad).
+
+---
 
 ## Structure
 
@@ -9,7 +40,7 @@ app/
   App.tsx                 # SafeArea + WalletProvider + tabs
   polyfill.js             # crypto/Buffer before @solana/web3.js
   src/
-    config/               # APP_IDENTITY, devnet RPC
+    config/               # APP_IDENTITY, cluster RPC
     wallet/               # MWA authorize / reauthorize / disconnect
     navigation/           # Plans stack + bottom tabs
     screens/              # Plans, PlanDetail, MyEsims, Wallet
@@ -18,13 +49,32 @@ app/
 shared/types.ts           # EsimPlan / EsimNft shared shapes
 ```
 
-## Tabs
+### Planned additions (Phase 0.5+)
 
-| Tab | Purpose |
-| --- | --- |
-| Plans | Browse plans → Buy with SOL (or Demo mode) → provisioning |
-| My eSIMs | Wallet-bound owned profiles → owner-only QR reveal |
-| Wallet | Connect via MWA, show pubkey + SOL balance |
+```
+src/
+  esim/                   # EuiccManager wrapper or partner SDK bridge
+  api/                    # Typed client for Solsim REST API
+  purchase/               # Payment tx builder + poll saga
+  seeker/                 # Device verification, Genesis Token checks
+  staking/                # Plan lock UI, SKR boost, rewards earned display
+```
+
+---
+
+## Navigation
+
+| Tab | Hackathon (shipped) | Production |
+|---|---|---|
+| **Plans** | Browse plans → Buy with SOL (or Demo mode) → provisioning | Live catalog from API; country search |
+| **My eSIMs** | Wallet-bound owned profiles → owner-only QR reveal | NFT-backed list; tap → install / usage / QR |
+| **Wallet** | MWA connect; pubkey + SOL balance | + USDC balance; SKR stake status |
+
+Future: **Settings** tab (notifications, language, support) in Phase 1.
+
+**Prepaid / staking checkout (Phase 1):** on Quarter+ plans, show “Stake & Earn” toggle — lock term, bonus data estimate, optional SKR boost slider, explicit expiry + no-rollover disclaimer (Annual tier shows rollover rules).
+
+---
 
 ## Purchase path
 
@@ -36,13 +86,112 @@ shared/types.ts           # EsimPlan / EsimNft shared shapes
 
 ## Wallet flow
 
-1. `transact` → `wallet.authorize({ chain: 'solana:devnet', identity })`
+1. `transact` → `wallet.authorize({ chain, identity })`
 2. Persist `auth_token` + pubkey (AsyncStorage)
-3. On launch, reauthorize with stored token; clear on failure
-4. Disconnect calls `deauthorize` when possible
+3. On launch, reauthorize; clear on failure
+4. Disconnect → `deauthorize` when possible
 
-Identity: `{ name: 'Solsim', uri: 'https://solsim.so' }`.
+**Identity:**
+
+```ts
+{ name: 'Solsim', uri: 'https://solsim.so', icon: 'favicon.ico' }
+```
+
+**Cluster:**
+
+| Build | Chain identifier |
+|---|---|
+| Hackathon | `solana:devnet` |
+| Production | `solana:mainnet` |
+
+On Seeker production builds, prefer **Seed Vault** as the default signer when available; fall back to MWA-compatible installed wallets.
+
+---
+
+## Purchase flow (target)
+
+```
+PlanDetail → confirm price
+    → MWA sign USDC transfer to treasury
+    → POST /purchases { planId, idempotencyKey, paymentSignature }
+    → poll GET /purchases/:id (2–3s interval, ~90s max)
+    → status active → navigate to My eSIMs
+    → trigger eSIM install (SDK or system UI)
+```
+
+**Hackathon:** payment + API integration is stubbed; mock plans are local.
+
+**Error states:** insufficient balance, payment not confirmed, provisioning failed (show retry + support), signature expired.
+
+---
+
+## eSIM install (Phase 0.5)
+
+Priority order for provisioning delivery:
+
+1. **Partner SDK** (1GLOBAL or eSIM Access) — one-tap install inside app
+2. **Android EuiccManager** — programmatic download if LPA available
+3. **Manual LPA / QR fallback** — show QR + copy activation code (owner-only, from API)
+
+Never store LPA in app logs, analytics, or NFT metadata.
+
+Post-install: show ICCID (truncated), data remaining, expiry; link to top-up when Phase 1.
+
+---
+
+## API client (Phase 0.5)
+
+All authenticated requests include:
+
+```
+X-Wallet: <pubkey>
+X-Signature: <sig of solsim-auth:...>
+X-Timestamp: <unix>
+```
+
+Endpoints consumed by app: `GET /plans`, `POST /purchases`, `GET /purchases/:id`, `GET /esims`, `GET /esims/:mint/qr`.
+
+Use `uuid` for `idempotencyKey` per purchase attempt.
+
+---
+
+## Seeker / dApp Store requirements
+
+| Requirement | Implementation |
+|---|---|
+| MWA integration | `@solana-mobile/mobile-wallet-adapter-protocol-web3js` |
+| App identity | Registered name + URI matching dApp Store listing |
+| Permissions | `WRITE_EMBEDDED_SUBSCRIPTIONS` / eSIM-related Android perms per SDK docs |
+| Privacy policy | URL in store listing; no PII on-chain |
+| Device attestation | Wallet-sign flow for Genesis perks (match Helium pattern) |
+
+Submission checklist: [Solana Mobile dApp Store docs](https://docs.solanamobile.com/).
+
+---
+
+## Security (client)
+
+- Never request or persist seed phrases
+- Use `FLAG_SECURE` on QR / LPA screens (production)
+- Clear sensitive state on background where OS allows
+- Validate API TLS; pin optional for production
+- Truncate pubkeys in UI; no full LPA in screenshots path
+
+---
 
 ## Run
 
-See root [README.md](../README.md). Needs an MWA wallet on the device/emulator (Phantom or [mock MWA wallet](https://github.com/solana-mobile/mock-mwa-wallet)).
+See root [README.md](../README.md).
+
+**Dev wallet:** [Phantom](https://play.google.com/store/apps/details?id=app.phantom) or [Mock MWA Wallet](https://github.com/solana-mobile/mock-mwa-wallet) on emulator/device.
+
+**Seeker testing:** deploy release build to physical Seeker via dApp Store beta or sideload when available.
+
+---
+
+## Document history
+
+| Version | Date | Changes |
+|---|---|---|
+| 1.0 | 2026-08-06 | Hackathon app structure |
+| 2.0 | 2026-08-06 | Seeker-first direction, eSIM install path, purchase saga, dApp Store reqs |
