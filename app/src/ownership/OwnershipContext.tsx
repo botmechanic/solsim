@@ -9,13 +9,14 @@ import {
 } from 'react';
 import type { OwnedEsim } from '../../../shared/types';
 import { useWallet } from '../wallet/WalletContext';
-import { loadAllOwned, upsertOwned } from './storage';
+import { loadOwnedNormalized, markListed, upsertOwned } from './mutations';
 
 type OwnershipContextValue = {
   esims: OwnedEsim[];
   loading: boolean;
   refresh: () => Promise<void>;
   addOwned: (esim: OwnedEsim) => Promise<void>;
+  markAsListed: (mint: string, listingId: string) => Promise<void>;
   getByMint: (mint: string) => OwnedEsim | undefined;
 };
 
@@ -29,7 +30,7 @@ export function OwnershipProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      setAll(await loadAllOwned());
+      setAll(await loadOwnedNormalized());
     } finally {
       setLoading(false);
     }
@@ -48,8 +49,16 @@ export function OwnershipProvider({ children }: { children: ReactNode }) {
   }, [all, publicKey]);
 
   const addOwned = useCallback(async (esim: OwnedEsim) => {
-    const next = await upsertOwned(esim);
+    const next = await upsertOwned({
+      ...esim,
+      dataRemainingMb:
+        esim.dataRemainingMb ?? Math.max(1024, Math.round(esim.dataMb * 0.6)),
+    });
     setAll(next);
+  }, []);
+
+  const markAsListed = useCallback(async (mint: string, listingId: string) => {
+    setAll(await markListed(mint, listingId));
   }, []);
 
   const getByMint = useCallback(
@@ -58,8 +67,15 @@ export function OwnershipProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ esims, loading, refresh, addOwned, getByMint }),
-    [esims, loading, refresh, addOwned, getByMint],
+    () => ({
+      esims,
+      loading,
+      refresh,
+      addOwned,
+      markAsListed,
+      getByMint,
+    }),
+    [esims, loading, refresh, addOwned, markAsListed, getByMint],
   );
 
   return (

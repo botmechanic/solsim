@@ -53,3 +53,21 @@ export function WalletTabIcon({ focused, size = 22 }: Props) {
     </Svg>
   );
 }
+
+export function MarketTabIcon({ focused, size = 22 }: Props) {
+  const c = tone(focused);
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M4 7h16l-1.2 11.2a1.5 1.5 0 0 1-1.5 1.3H6.7a1.5 1.5 0 0 1-1.5-1.3L4 7z"
+        stroke={c}
+        strokeWidth={1.6}
+      />
+      <Path
+        d="M8 7V5.8A2.8 2.8 0 0 1 10.8 3h2.4A2.8 2.8 0 0 1 16 5.8V7"
+        stroke={c}
+        strokeWidth={1.6}
+      />
+    </Svg>
+  );
+}

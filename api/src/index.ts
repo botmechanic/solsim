@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import express from 'express';
 import { errorMiddleware } from './middleware/errors.js';
 import { createRedactedLogger } from './middleware/logRedactor.js';
+import { listingsRouter } from './routes/listings.js';
 import { mintsRouter } from './routes/mints.js';
 import { plansRouter } from './routes/plans.js';
 
@@ -29,6 +30,7 @@ app.get('/v1/health', (_req, res) => {
 
 app.use('/v1', plansRouter);
 app.use('/v1', mintsRouter);
+app.use('/v1', listingsRouter);
 
 app.use(errorMiddleware);
 

@@ -8,14 +8,19 @@ import { PurchasingScreen } from '../screens/PurchasingScreen';
 import { MyEsimsScreen } from '../screens/MyEsimsScreen';
 import { EsimQrScreen } from '../screens/EsimQrScreen';
 import { InstallGuideScreen } from '../screens/InstallGuideScreen';
+import { SellLeftoverScreen } from '../screens/SellLeftoverScreen';
+import { MarketplaceScreen } from '../screens/MarketplaceScreen';
+import { ListingDetailScreen } from '../screens/ListingDetailScreen';
 import { WalletScreen } from '../screens/WalletScreen';
 import { colors, fonts, space } from '../theme/tokens';
 import {
   EsimsTabIcon,
+  MarketTabIcon,
   PlansTabIcon,
   WalletTabIcon,
 } from './TabIcons';
 import type {
+  MarketplaceStackParamList,
   MyEsimsStackParamList,
   PlansStackParamList,
   RootTabParamList,
@@ -24,6 +29,7 @@ import type {
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const PlansStack = createNativeStackNavigator<PlansStackParamList>();
 const MyEsimsStack = createNativeStackNavigator<MyEsimsStackParamList>();
+const MarketStack = createNativeStackNavigator<MarketplaceStackParamList>();
 
 const navTheme = {
   ...DefaultTheme,
@@ -49,6 +55,23 @@ const stackScreenOptions = {
   },
   contentStyle: { backgroundColor: colors.bg },
 };
+
+function MarketplaceStackNavigator() {
+  return (
+    <MarketStack.Navigator screenOptions={stackScreenOptions}>
+      <MarketStack.Screen
+        name="MarketplaceList"
+        component={MarketplaceScreen}
+        options={{ headerShown: false }}
+      />
+      <MarketStack.Screen
+        name="ListingDetail"
+        component={ListingDetailScreen}
+        options={{ title: 'Leftover' }}
+      />
+    </MarketStack.Navigator>
+  );
+}
 
 function PlansStackNavigator() {
   return (
@@ -90,6 +113,11 @@ function MyEsimsStackNavigator() {
         component={InstallGuideScreen}
         options={{ title: 'Install' }}
       />
+      <MyEsimsStack.Screen
+        name="SellLeftover"
+        component={SellLeftoverScreen}
+        options={{ title: 'Sell leftover' }}
+      />
     </MyEsimsStack.Navigator>
   );
 }
@@ -112,12 +140,23 @@ export function RootNavigator() {
   return (
     <NavigationContainer theme={navTheme}>
       <Tab.Navigator
+        initialRouteName="Marketplace"
         screenOptions={{
           headerShown: false,
           tabBarStyle: styles.tabBar,
           tabBarActiveTintColor: colors.accent,
           tabBarInactiveTintColor: colors.tabInactive,
         }}>
+        <Tab.Screen
+          name="Marketplace"
+          component={MarketplaceStackNavigator}
+          options={{
+            tabBarIcon: ({ focused }) => <MarketTabIcon focused={focused} />,
+            tabBarLabel: ({ focused }) => (
+              <TabLabel label="Market" focused={focused} />
+            ),
+          }}
+        />
         <Tab.Screen
           name="Plans"
           component={PlansStackNavigator}

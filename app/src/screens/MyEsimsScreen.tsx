@@ -35,7 +35,7 @@ export function MyEsimsScreen({ navigation }: Props) {
       ]}>
       <Text style={styles.title}>My eSIMs</Text>
       <Text style={styles.subtitle}>
-        Wallet-bound ownership. QR never appears in public metadata.
+        Wallet-bound ownership. Unused data can be listed on Marketplace.
       </Text>
       <Button
         label="How to install"
@@ -81,12 +81,22 @@ export function MyEsimsScreen({ navigation }: Props) {
             </View>
           }
           renderItem={({ item }) => (
-            <EsimCard
-              esim={item}
-              onPress={() =>
-                navigation.navigate('EsimQr', { mint: item.mint })
-              }
-            />
+            <View style={styles.cardWrap}>
+              <EsimCard
+                esim={item}
+                onPress={() =>
+                  navigation.navigate('EsimQr', { mint: item.mint })
+                }
+              />
+              <Button
+                label="Sell leftover"
+                variant="secondary"
+                onPress={() =>
+                  navigation.navigate('SellLeftover', { mint: item.mint })
+                }
+                style={styles.sell}
+              />
+            </View>
           )}
         />
       )}
@@ -116,6 +126,13 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingBottom: space.xxxl,
+  },
+  cardWrap: {
+    marginBottom: space.md,
+  },
+  sell: {
+    marginTop: -space.xs,
+    marginBottom: space.sm,
   },
   flexGrow: {
     flexGrow: 1,

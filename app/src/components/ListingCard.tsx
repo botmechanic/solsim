@@ -1,40 +1,34 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import type { OwnedEsim } from '../../../shared/types';
-import { colors, radius, space, type } from '../theme/tokens';
+import type { MarketplaceListing } from '../../../shared/types';
 import { destinationFor } from '../theme/destinations';
-import { isDemoSignature } from '../lib/explorer';
-import { formatDataMb, truncatePubkey } from '../lib/format';
+import { colors, radius, space, type } from '../theme/tokens';
+import { formatDataMb, formatLamportsAsSol, truncatePubkey } from '../lib/format';
 
 type Props = {
-  esim: OwnedEsim;
+  listing: MarketplaceListing;
   onPress: () => void;
 };
 
-export function EsimCard({ esim, onPress }: Props) {
-  const dest = destinationFor(esim.country);
-  const isDemo = isDemoSignature(esim.paymentSignature);
-  const remaining =
-    typeof esim.dataRemainingMb === 'number'
-      ? esim.dataRemainingMb
-      : esim.dataMb;
-
+export function ListingCard({ listing, onPress }: Props) {
+  const dest = destinationFor(listing.country);
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
       <View style={styles.top}>
         <Text style={styles.country}>{dest.name}</Text>
-        <Text style={[styles.badge, isDemo ? styles.badgeDemo : styles.badgeLive]}>
-          {isDemo ? 'Demo' : 'NFT'}
+        <Text style={[styles.badge, listing.demo ? styles.badgeDemo : styles.badgeLive]}>
+          {listing.demo ? 'Demo' : 'Live'}
         </Text>
       </View>
       <Text style={styles.meta}>
-        {formatDataMb(remaining)} left of {formatDataMb(esim.dataMb)} · until{' '}
-        {new Date(esim.validUntil).toLocaleDateString()}
+        {formatDataMb(listing.dataRemainingMb)} left of{' '}
+        {formatDataMb(listing.dataMb)} · until{' '}
+        {new Date(listing.validUntil).toLocaleDateString()}
       </Text>
       <View style={styles.footer}>
-        <Text style={styles.mint}>{truncatePubkey(esim.mint, 6, 6)}</Text>
-        <Text style={styles.reveal}>Reveal QR</Text>
+        <Text style={styles.seller}>{truncatePubkey(listing.seller, 4, 4)}</Text>
+        <Text style={styles.price}>{formatLamportsAsSol(listing.priceLamports)}</Text>
       </View>
     </Pressable>
   );
@@ -85,13 +79,12 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
     paddingTop: space.md,
   },
-  mint: {
+  seller: {
     ...type.caption,
     color: colors.textTertiary,
   },
-  reveal: {
+  price: {
     ...type.bodyStrong,
     color: colors.accent,
-    fontSize: 13,
   },
 });

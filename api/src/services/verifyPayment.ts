@@ -29,10 +29,10 @@ export function getTreasuryPubkey(): PublicKey {
   }
 }
 
-function transferLamportsToTreasury(
+function transferLamportsTo(
   tx: ParsedTransactionWithMeta,
-  owner: PublicKey,
-  treasury: PublicKey,
+  source: PublicKey,
+  destination: PublicKey,
 ): bigint {
   let total = 0n;
   const message = tx.transaction.message;
@@ -47,8 +47,8 @@ function transferLamportsToTreasury(
         lamports?: number;
       };
       if (
-        info.source === owner.toBase58() &&
-        info.destination === treasury.toBase58() &&
+        info.source === source.toBase58() &&
+        info.destination === destination.toBase58() &&
         typeof info.lamports === 'number'
       ) {
         total += BigInt(info.lamports);
@@ -87,11 +87,53 @@ export async function verifyPayment(params: {
     );
   }
 
-  const paid = transferLamportsToTreasury(tx, ownerKey, treasury);
+  const paid = transferLamportsTo(tx, ownerKey, treasury);
   if (paid < params.minLamports) {
     throw new ApiError(
       'INSUFFICIENT_PAYMENT',
       'Payment does not cover the plan price to the treasury.',
+      400,
+      false,
+    );
+  }
+}
+
+/** Verify confirmed SOL payment from buyer → arbitrary destination (secondary sale). */
+export async function verifySolPayment(params: {
+  paymentSignature: string;
+  payer: string;
+  destination: string;
+  minLamports: bigint;
+}): Promise<void> {
+  const connection = getConnection();
+  let payerKey: PublicKey;
+  let destKey: PublicKey;
+  try {
+    payerKey = new PublicKey(params.payer);
+    destKey = new PublicKey(params.destination);
+  } catch {
+    throw new ApiError('UNAUTHORIZED', 'Invalid payer or destination.', 400, false);
+  }
+
+  const tx = await connection.getParsedTransaction(params.paymentSignature, {
+    maxSupportedTransactionVersion: 0,
+    commitment: 'confirmed',
+  });
+
+  if (!tx || tx.meta?.err) {
+    throw new ApiError(
+      'PAYMENT_NOT_CONFIRMED',
+      'Payment is not confirmed on-chain yet. Wait and retry.',
+      409,
+      true,
+    );
+  }
+
+  const paid = transferLamportsTo(tx, payerKey, destKey);
+  if (paid < params.minLamports) {
+    throw new ApiError(
+      'INSUFFICIENT_PAYMENT',
+      'Payment does not cover the listing price to the seller.',
       400,
       false,
     );

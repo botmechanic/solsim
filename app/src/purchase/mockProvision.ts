@@ -22,6 +22,8 @@ export function provisionMockEsim(
   const validUntil = new Date(
     Date.now() + plan.validityDays * 24 * 60 * 60 * 1000,
   ).toISOString();
+  // Mock “already used ~40%” so Sell leftover is the pitch-ready state.
+  const dataRemainingMb = Math.max(1024, Math.round(plan.dataMb * 0.6));
 
   return {
     mint: resolvedMint,
@@ -29,6 +31,7 @@ export function provisionMockEsim(
     planId: plan.planId,
     country: plan.country,
     dataMb: plan.dataMb,
+    dataRemainingMb,
     validUntil,
     status: 'active',
     iccid,
