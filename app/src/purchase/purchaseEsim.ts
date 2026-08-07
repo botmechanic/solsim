@@ -16,15 +16,34 @@ import { APP_IDENTITY, SOLANA_CHAIN } from '../config/identity';
 import { connection } from '../config/solana';
 import { MEMO_PROGRAM_ID, TREASURY_PUBKEY } from '../config/treasury';
 import { provisionMockEsim } from './mockProvision';
+import { requestNftMint } from './requestNftMint';
 
 export type PurchaseStep =
   | 'authorizing'
   | 'signing'
   | 'confirming'
+  | 'minting'
   | 'provisioning'
   | 'complete';
 
 export type PurchaseProgress = (step: PurchaseStep) => void;
+
+export class MintAfterPaymentError extends Error {
+  readonly paymentSignature: string;
+  readonly owner: string;
+  readonly authToken: string;
+
+  constructor(
+    message: string,
+    params: { paymentSignature: string; owner: string; authToken: string },
+  ) {
+    super(message);
+    this.name = 'MintAfterPaymentError';
+    this.paymentSignature = params.paymentSignature;
+    this.owner = params.owner;
+    this.authToken = params.authToken;
+  }
+}
 
 function accountAddressToPublicKey(address: string): PublicKey {
   return new PublicKey(toByteArray(address));
@@ -36,11 +55,37 @@ async function sleep(ms: number): Promise<void> {
   });
 }
 
+/** Mint + provision after payment is already confirmed (also used for retry). */
+export async function finishPurchaseAfterPayment(params: {
+  plan: EsimPlan;
+  owner: string;
+  paymentSignature: string;
+  authToken: string;
+  onProgress?: PurchaseProgress;
+}): Promise<{ esim: OwnedEsim; paymentSignature: string; authToken: string }> {
+  const { plan, owner, paymentSignature, authToken, onProgress } = params;
+
+  onProgress?.('minting');
+  const minted = await requestNftMint({
+    owner,
+    planId: plan.planId,
+    paymentSignature,
+  });
+
+  onProgress?.('provisioning');
+  await sleep(400);
+  const esim = provisionMockEsim(plan, owner, paymentSignature, minted.mint);
+  onProgress?.('complete');
+
+  return { esim, paymentSignature, authToken };
+}
+
 /**
  * Full demo purchase:
  * 1) MWA authorize + sign/send SOL payment on devnet
  * 2) confirm payment
- * 3) mock-provision eSIM + local ownership record (QR off-chain)
+ * 3) API mints Metaplex NFT to buyer
+ * 4) mock-provision eSIM + local ownership record (QR off-chain)
  */
 export async function purchaseEsim(params: {
   plan: EsimPlan;
@@ -101,12 +146,25 @@ export async function purchaseEsim(params: {
     throw new Error('Payment failed on-chain. Try again or top up devnet SOL.');
   }
 
-  onProgress?.('provisioning');
-  await sleep(600);
-  const esim = provisionMockEsim(plan, owner, signature);
-  onProgress?.('complete');
-
-  return { esim, paymentSignature: signature, authToken: nextAuthToken };
+  try {
+    return await finishPurchaseAfterPayment({
+      plan,
+      owner,
+      paymentSignature: signature,
+      authToken: nextAuthToken,
+      onProgress,
+    });
+  } catch (err) {
+    const message =
+      err instanceof Error
+        ? err.message
+        : 'NFT mint failed — payment OK, retry mint.';
+    throw new MintAfterPaymentError(message, {
+      paymentSignature: signature,
+      owner,
+      authToken: nextAuthToken,
+    });
+  }
 }
 
 /** Offline demo path when wallet has no SOL / faucet unavailable. */
@@ -121,6 +179,8 @@ export async function purchaseEsimDemo(params: {
   onProgress?.('signing');
   await sleep(450);
   onProgress?.('confirming');
+  await sleep(350);
+  onProgress?.('minting');
   await sleep(350);
   onProgress?.('provisioning');
   await sleep(650);

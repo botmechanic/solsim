@@ -4,7 +4,22 @@ import { mockProvider } from '../services/mockProvider.js';
 import { ApiError } from '../middleware/errors.js';
 import type { CountryCode } from '../types.js';
 
-const countrySchema = z.enum(['TH', 'JP']).optional();
+const countrySchema = z
+  .enum([
+    'TH',
+    'JP',
+    'US',
+    'KR',
+    'SG',
+    'VN',
+    'FR',
+    'DE',
+    'GB',
+    'AU',
+    'MX',
+    'BR',
+  ])
+  .optional();
 
 let cached: { at: number; plans: Awaited<ReturnType<typeof mockProvider.listPlans>> } | null =
   null;

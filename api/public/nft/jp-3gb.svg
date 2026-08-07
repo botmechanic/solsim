@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#0B0B0C"/>
+  <rect x="48" y="48" width="416" height="416" rx="24" fill="#161618" stroke="#2EC4B6" stroke-width="4"/>
+  <text x="256" y="230" text-anchor="middle" font-family="system-ui,sans-serif" font-size="96" font-weight="700" fill="#EDEDEF">JP</text>
+  <text x="256" y="300" text-anchor="middle" font-family="system-ui,sans-serif" font-size="36" font-weight="600" fill="#2EC4B6">3 GB</text>
+  <text x="256" y="360" text-anchor="middle" font-family="system-ui,sans-serif" font-size="22" fill="#A0A0A8">Solsim</text>
+</svg>

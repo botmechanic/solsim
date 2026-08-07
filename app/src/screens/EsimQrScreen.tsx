@@ -13,7 +13,7 @@ import QRCode from 'react-native-qrcode-svg';
 import { colors, radius, space, type } from '../theme/tokens';
 import { destinationFor } from '../theme/destinations';
 import { formatDataMb, truncatePubkey } from '../lib/format';
-import { isDemoSignature, solscanTxUrl } from '../lib/explorer';
+import { isDemoSignature, solscanTokenUrl, solscanTxUrl } from '../lib/explorer';
 import { setSecureScreen } from '../native/secureScreen';
 import { useWallet } from '../wallet/WalletContext';
 import { useOwnership } from '../ownership/OwnershipContext';
@@ -105,17 +105,26 @@ export function EsimQrScreen({ navigation, route }: Props) {
         style={styles.action}
       />
       {!isDemoSignature(esim.paymentSignature) ? (
-        <Button
-          label="Payment on Solscan"
-          variant="ghost"
-          onPress={() => Linking.openURL(solscanTxUrl(esim.paymentSignature))}
-          style={styles.action}
-        />
+        <>
+          <Button
+            label="View NFT on Solscan"
+            variant="secondary"
+            onPress={() => Linking.openURL(solscanTokenUrl(esim.mint))}
+            style={styles.action}
+          />
+          <Button
+            label="Payment on Solscan"
+            variant="ghost"
+            onPress={() => Linking.openURL(solscanTxUrl(esim.paymentSignature))}
+            style={styles.action}
+          />
+        </>
       ) : null}
 
       <Text style={styles.warning}>
-        Mock profile for demo — same ownership model as production. Not a live
-        cellular install.
+        {isDemoSignature(esim.paymentSignature)
+          ? 'Mock profile for demo — same ownership model as production. Not a live cellular install.'
+          : 'Mock cellular QR + real NFT on devnet. Check Phantom Collectibles. Not a live cellular install.'}
       </Text>
     </ScrollView>
   );

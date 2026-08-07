@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { OwnedEsim } from '../../../shared/types';
 import { colors, radius, space, type } from '../theme/tokens';
 import { destinationFor } from '../theme/destinations';
+import { isDemoSignature } from '../lib/explorer';
 import { formatDataMb, truncatePubkey } from '../lib/format';
 
 type Props = {
@@ -11,6 +12,7 @@ type Props = {
 
 export function EsimCard({ esim, onPress }: Props) {
   const dest = destinationFor(esim.country);
+  const isDemo = isDemoSignature(esim.paymentSignature);
 
   return (
     <Pressable
@@ -18,7 +20,9 @@ export function EsimCard({ esim, onPress }: Props) {
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
       <View style={styles.top}>
         <Text style={styles.country}>{dest.name}</Text>
-        <Text style={styles.owned}>Owned</Text>
+        <Text style={[styles.badge, isDemo ? styles.badgeDemo : styles.badgeLive]}>
+          {isDemo ? 'Demo' : 'NFT'}
+        </Text>
       </View>
       <Text style={styles.meta}>
         {formatDataMb(esim.dataMb)} · until{' '}
@@ -54,9 +58,15 @@ const styles = StyleSheet.create({
     ...type.headline,
     color: colors.text,
   },
-  owned: {
+  badge: {
     ...type.label,
+    fontSize: 11,
+  },
+  badgeLive: {
     color: colors.accent,
+  },
+  badgeDemo: {
+    color: colors.warning,
   },
   meta: {
     ...type.caption,

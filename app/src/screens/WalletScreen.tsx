@@ -4,7 +4,6 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
-  Share,
   StyleSheet,
   Text,
   View,
@@ -15,6 +14,7 @@ import { ConnectWalletButton } from '../components/ConnectWalletButton';
 import { colors, radius, space, type } from '../theme/tokens';
 import { truncatePubkey } from '../lib/format';
 import { solscanAddressUrl } from '../lib/explorer';
+import { shareText } from '../lib/shareText';
 import { useWallet } from '../wallet/WalletContext';
 import { SOLANA_CHAIN } from '../config/identity';
 
@@ -46,9 +46,7 @@ export function WalletScreen() {
     if (!address) {
       return;
     }
-    Share.share({ message: address, title: 'Solsim wallet' }).catch(
-      () => undefined,
-    );
+    shareText(address, 'Solsim wallet').catch(() => undefined);
   };
 
   return (

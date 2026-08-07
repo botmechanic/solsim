@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Linking,
@@ -8,14 +8,19 @@ import {
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { PublicKey } from '@solana/web3.js';
+import type { OwnedEsim } from '../../../shared/types';
 import { getPlanById } from '../data/plansCatalog';
 import { colors, fonts, radius, space, type } from '../theme/tokens';
 import { formatLamportsAsSol } from '../lib/format';
-import { isDemoSignature, solscanTxUrl } from '../lib/explorer';
+import { isDemoSignature, solscanTokenUrl, solscanTxUrl } from '../lib/explorer';
+import { hapticError, hapticSuccess } from '../lib/haptics';
+import { shareText } from '../lib/shareText';
 import { destinationFor } from '../theme/destinations';
 import { useWallet } from '../wallet/WalletContext';
 import { useOwnership } from '../ownership/OwnershipContext';
 import {
+  finishPurchaseAfterPayment,
+  MintAfterPaymentError,
   purchaseEsim,
   purchaseEsimDemo,
   type PurchaseStep,
@@ -30,6 +35,7 @@ const STEPS: { id: PurchaseStep; label: string }[] = [
   { id: 'authorizing', label: 'Authorize wallet' },
   { id: 'signing', label: 'Sign payment' },
   { id: 'confirming', label: 'Confirm on-chain' },
+  { id: 'minting', label: 'Mint NFT' },
   { id: 'provisioning', label: 'Provision profile' },
   { id: 'complete', label: 'Ready' },
 ];
@@ -50,7 +56,27 @@ export function PurchasingScreen({ navigation, route }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [mint, setMint] = useState<string | null>(null);
   const [paymentSignature, setPaymentSignature] = useState<string | null>(null);
+  const [paidOwner, setPaidOwner] = useState<string | null>(null);
+  const [paidAuthToken, setPaidAuthToken] = useState<string | null>(null);
+  const [retrying, setRetrying] = useState(false);
   const started = useRef(false);
+
+  const onSuccess = useCallback(
+    async (result: {
+      esim: OwnedEsim;
+      paymentSignature: string;
+      authToken: string;
+    }) => {
+      await setSession(new PublicKey(result.esim.owner), result.authToken);
+      await addOwned(result.esim);
+      await refreshBalance();
+      setMint(result.esim.mint);
+      setPaymentSignature(result.paymentSignature);
+      setError(null);
+      hapticSuccess();
+    },
+    [addOwned, refreshBalance, setSession],
+  );
 
   useEffect(() => {
     if (!plan || started.current) {
@@ -72,6 +98,7 @@ export function PurchasingScreen({ navigation, route }: Props) {
           await addOwned(esim);
           setMint(esim.mint);
           setPaymentSignature(esim.paymentSignature);
+          hapticSuccess();
           return;
         }
 
@@ -80,12 +107,16 @@ export function PurchasingScreen({ navigation, route }: Props) {
           authToken,
           onProgress: setStep,
         });
-        await setSession(new PublicKey(result.esim.owner), result.authToken);
-        await addOwned(result.esim);
-        await refreshBalance();
-        setMint(result.esim.mint);
-        setPaymentSignature(result.paymentSignature);
+        await onSuccess(result);
       } catch (err) {
+        hapticError();
+        if (err instanceof MintAfterPaymentError) {
+          setPaymentSignature(err.paymentSignature);
+          setPaidOwner(err.owner);
+          setPaidAuthToken(err.authToken);
+          setError(err.message);
+          return;
+        }
         const message =
           err instanceof Error ? err.message : 'Purchase failed. Try again.';
         setError(message);
@@ -97,9 +128,35 @@ export function PurchasingScreen({ navigation, route }: Props) {
     publicKey,
     authToken,
     addOwned,
-    setSession,
-    refreshBalance,
+    onSuccess,
   ]);
+
+  const onRetryMint = async () => {
+    if (!plan || !paymentSignature || !paidOwner || !paidAuthToken) {
+      return;
+    }
+    setRetrying(true);
+    setError(null);
+    try {
+      const result = await finishPurchaseAfterPayment({
+        plan,
+        owner: paidOwner,
+        paymentSignature,
+        authToken: paidAuthToken,
+        onProgress: setStep,
+      });
+      await onSuccess(result);
+    } catch (err) {
+      hapticError();
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'NFT mint failed — payment OK, retry mint.';
+      setError(message);
+    } finally {
+      setRetrying(false);
+    }
+  };
 
   if (!plan) {
     return (
@@ -112,6 +169,9 @@ export function PurchasingScreen({ navigation, route }: Props) {
   const activeIdx = stepIndex(step);
   const done = Boolean(mint);
   const dest = destinationFor(plan.country);
+  const canRetryMint = Boolean(
+    !done && paymentSignature && paidOwner && !demoMode,
+  );
 
   return (
     <Screen>
@@ -157,16 +217,41 @@ export function PurchasingScreen({ navigation, route }: Props) {
       {error ? (
         <View style={styles.errorBox}>
           <Text style={styles.error}>{error}</Text>
-          <Text style={styles.hint}>
-            Top up via the Solana faucet, then retry — or use Demo mode from the
-            plan screen.
-          </Text>
-          <Button
-            label="Open faucet"
-            variant="secondary"
-            onPress={() => Linking.openURL('https://faucet.solana.com')}
-            style={styles.btnGap}
-          />
+          {canRetryMint ? (
+            <Text style={styles.hint}>
+              Payment already landed on-chain. Retry mint without paying again —
+              keep the API running with a funded mint authority.
+            </Text>
+          ) : (
+            <Text style={styles.hint}>
+              Top up via the Solana faucet, then retry — or use Demo mode from
+              the plan screen.
+            </Text>
+          )}
+          {canRetryMint ? (
+            <Button
+              label="Retry mint"
+              onPress={onRetryMint}
+              loading={retrying}
+              style={styles.btnGap}
+            />
+          ) : null}
+          {paymentSignature && !isDemoSignature(paymentSignature) ? (
+            <Button
+              label="View payment on Solscan"
+              variant="secondary"
+              onPress={() => Linking.openURL(solscanTxUrl(paymentSignature))}
+              style={styles.btnGap}
+            />
+          ) : null}
+          {!canRetryMint ? (
+            <Button
+              label="Open faucet"
+              variant="secondary"
+              onPress={() => Linking.openURL('https://faucet.solana.com')}
+              style={styles.btnGap}
+            />
+          ) : null}
           <Button
             label="Back"
             variant="ghost"
@@ -179,8 +264,9 @@ export function PurchasingScreen({ navigation, route }: Props) {
         <View style={styles.successBox}>
           <Text style={styles.successTitle}>You’re the owner</Text>
           <Text style={styles.successBody}>
-            Payment settled. Your QR is gated to this wallet — never written to
-            public NFT metadata.
+            {demoMode
+              ? 'Demo profile bound to this wallet. Live buys mint a real NFT on devnet.'
+              : 'Payment settled and NFT minted on devnet. Check Phantom → Collectibles (devnet). QR stays off-chain.'}
           </Text>
           <Button
             label="Reveal QR"
@@ -191,6 +277,22 @@ export function PurchasingScreen({ navigation, route }: Props) {
               });
             }}
           />
+          {mint && paymentSignature && !isDemoSignature(paymentSignature) ? (
+            <Button
+              label="View NFT on Solscan"
+              variant="secondary"
+              onPress={() => Linking.openURL(solscanTokenUrl(mint))}
+              style={styles.btnGap}
+            />
+          ) : null}
+          {mint ? (
+            <Button
+              label="Share mint address"
+              variant="secondary"
+              onPress={() => shareText(mint, 'Solsim mint')}
+              style={styles.btnGap}
+            />
+          ) : null}
           {paymentSignature && !isDemoSignature(paymentSignature) ? (
             <Button
               label="View payment on Solscan"

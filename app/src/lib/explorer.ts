@@ -7,6 +7,10 @@ export function solscanAddressUrl(address: string): string {
   return `https://solscan.io/account/${address}?cluster=devnet`;
 }
 
+export function solscanTokenUrl(mint: string): string {
+  return `https://solscan.io/token/${mint}?cluster=devnet`;
+}
+
 export function isDemoSignature(signature: string): boolean {
   return signature.startsWith('demo');
 }

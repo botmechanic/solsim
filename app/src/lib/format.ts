@@ -3,6 +3,16 @@ import type { CountryCode } from '../../../shared/types';
 const COUNTRY_LABELS: Record<CountryCode, string> = {
   TH: 'Thailand',
   JP: 'Japan',
+  US: 'United States',
+  KR: 'South Korea',
+  SG: 'Singapore',
+  VN: 'Vietnam',
+  FR: 'France',
+  DE: 'Germany',
+  GB: 'United Kingdom',
+  AU: 'Australia',
+  MX: 'Mexico',
+  BR: 'Brazil',
 };
 
 export function truncatePubkey(pubkey: string, left = 4, right = 4): string {

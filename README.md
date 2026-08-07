@@ -1,11 +1,11 @@
 # Solsim
 
-Hackathon MVP: buy a mock eSIM on **Solana devnet**, own it as an NFT, reveal a mock QR to the on-chain owner.
+Hackathon MVP: buy a mock eSIM on **Solana devnet**, mint a **real Metaplex NFT** to the buyer, reveal a mock QR only to the owning wallet.
 
 ## Repo layout
 
 - `app/` — React Native (Android) client with Mobile Wallet Adapter
-- `api/` — Express mock catalog (`GET /health`, `GET /v1/plans`)
+- `api/` — Express catalog + Metaplex mint (`GET /v1/plans`, `POST /v1/mints`)
 - `docs/PRD.md` — evening hackathon scope
 - `docs/APP.md` — app structure and MWA wallet flow
 - `docs/DEMO.md` — 90-second judge demo script
@@ -34,14 +34,32 @@ Install an MWA-compatible wallet on the emulator/device:
 
 Docs: [Solana Mobile overview](https://docs.solanamobile.com/get-started/overview) · [Invoke MWA directly](https://docs.solanamobile.com/get-started/react-native/invoke-mwa-sessions-directly)
 
-## Run the API (optional — app falls back to offline mock catalog)
+## Run the API (required for live Buy with SOL mint)
 
 ```bash
 cd api
 npm install
+cp .env.example .env
+
+# Generate mint authority (once), fund it on devnet, paste secret into .env
+npm run create-mint-authority
+# → fund printed pubkey at https://faucet.solana.com (~1–2 SOL)
+# → set MINT_AUTHORITY_SECRET=... and TREASURY_PUBKEY (must match app)
+
 npm run dev          # http://localhost:8787
 # curl http://localhost:8787/v1/plans
 ```
+
+Emulator reaches the API at `http://10.0.2.2:8787`. Also:
+
+```bash
+adb reverse tcp:8787 tcp:8787
+adb reverse tcp:8081 tcp:8081
+```
+
+Without the API (or mint authority), **Demo mode** still works offline. Live buys will fail at the mint step with a clear error.
+
+NFT metadata JSON/SVG lives in `api/public/nft/` and is referenced via GitHub raw URLs so Phantom can fetch images after push.
 
 ## Run the app
 
@@ -53,19 +71,18 @@ npm start          # Metro
 npm run android
 ```
 
-Emulator reaches the API at `http://10.0.2.2:8787` (see `app/src/config/api.ts`).
-
 Demo loop (done for judging):
 
 - Bottom tabs: **Plans / My eSIMs / Wallet**
 - MWA connect + **Buy with SOL** (memo + transfer on devnet)
-- Mock provision → encrypted local ownership vault → **owner-only QR reveal**
-- `FLAG_SECURE` on QR screen (Android screenshot block)
-- Demo mode fallback if faucet/SOL is unavailable
+- API mints Metaplex NFT → Phantom Collectibles (devnet)
+- Mock QR in encrypted local vault → **owner-only reveal**
+- `FLAG_SECURE` on QR screen
+- Demo mode fallback if faucet/SOL/API is unavailable
 - Identity: `{ name: 'Solsim', uri: 'https://solsim.so' }`, cluster `solana:devnet`
 
 See [docs/DEMO.md](docs/DEMO.md) for the pitch script.
 
 ## Next (post-hackathon)
 
-Purchase saga + Postgres, Metaplex collection mint, wire `decryptQrPayload` to `GET /esims/:mint/qr`.
+Postgres purchase saga, collection NFT, wire `decryptQrPayload` to `GET /esims/:mint/qr`.

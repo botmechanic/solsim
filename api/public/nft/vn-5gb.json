@@ -1,0 +1,21 @@
+{
+  "name": "Solsim VN 5GB",
+  "symbol": "SOLSIM",
+  "description": "Hackathon demo eSIM plan for Vietnam. QR is off-chain and owner-gated — never in this metadata.",
+  "image": "https://raw.githubusercontent.com/botmechanic/solsim/main/api/public/nft/vn-5gb.svg",
+  "attributes": [
+    { "trait_type": "Country", "value": "Vietnam" },
+    { "trait_type": "Data", "value": "5120 MB" },
+    { "trait_type": "Validity", "value": "30 days" },
+    { "trait_type": "Provider", "value": "Mock" }
+  ],
+  "properties": {
+    "category": "image",
+    "files": [
+      {
+        "uri": "https://raw.githubusercontent.com/botmechanic/solsim/main/api/public/nft/vn-5gb.svg",
+        "type": "image/svg+xml"
+      }
+    ]
+  }
+}

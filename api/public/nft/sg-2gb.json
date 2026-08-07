@@ -1,0 +1,21 @@
+{
+  "name": "Solsim SG 2GB",
+  "symbol": "SOLSIM",
+  "description": "Hackathon demo eSIM plan for Singapore. QR is off-chain and owner-gated — never in this metadata.",
+  "image": "https://raw.githubusercontent.com/botmechanic/solsim/main/api/public/nft/sg-2gb.svg",
+  "attributes": [
+    { "trait_type": "Country", "value": "Singapore" },
+    { "trait_type": "Data", "value": "2048 MB" },
+    { "trait_type": "Validity", "value": "7 days" },
+    { "trait_type": "Provider", "value": "Mock" }
+  ],
+  "properties": {
+    "category": "image",
+    "files": [
+      {
+        "uri": "https://raw.githubusercontent.com/botmechanic/solsim/main/api/public/nft/sg-2gb.svg",
+        "type": "image/svg+xml"
+      }
+    ]
+  }
+}

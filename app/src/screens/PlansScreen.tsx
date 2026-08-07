@@ -58,9 +58,21 @@ export function PlansScreen({ navigation }: Props) {
           only while you hold it.
         </Text>
         {source ? (
-          <Text style={styles.source}>
-            {source === 'api' ? 'Live catalog' : 'Offline catalog'} · Devnet
-          </Text>
+          <View
+            style={[
+              styles.sourcePill,
+              source === 'api' ? styles.sourceLive : styles.sourceOffline,
+            ]}>
+            <View
+              style={[
+                styles.sourceDot,
+                source === 'api' ? styles.dotLive : styles.dotOffline,
+              ]}
+            />
+            <Text style={styles.sourceText}>
+              {source === 'api' ? 'Live API' : 'Offline catalog'} · Devnet
+            </Text>
+          </View>
         ) : null}
       </View>
 
@@ -134,10 +146,39 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     maxWidth: 340,
   },
-  source: {
-    ...type.caption,
-    color: colors.textTertiary,
+  sourcePill: {
     marginTop: space.md,
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  sourceLive: {
+    backgroundColor: colors.accentMuted,
+    borderColor: colors.accentDim,
+  },
+  sourceOffline: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+  },
+  sourceDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  dotLive: {
+    backgroundColor: colors.accent,
+  },
+  dotOffline: {
+    backgroundColor: colors.textTertiary,
+  },
+  sourceText: {
+    ...type.caption,
+    color: colors.textSecondary,
   },
   section: {
     ...type.label,

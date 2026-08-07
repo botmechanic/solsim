@@ -30,8 +30,9 @@ shared/types.ts           # EsimPlan / EsimNft shared shapes
 
 1. MWA `authorize` + `signAndSendTransactions` (memo + SOL transfer on **devnet**)
 2. Confirm payment via RPC
-3. Mock-provision ICCID + `LPA:` QR (local vault only)
-4. My eSIMs lists ownership; QR screen re-checks connected wallet == owner
+3. `POST /v1/mints` — API verifies payment and mints Metaplex NFT to the buyer
+4. Mock-provision ICCID + `LPA:` QR (local vault; mint address from API)
+5. My eSIMs lists ownership; QR screen re-checks connected wallet == owner
 
 ## Wallet flow
 

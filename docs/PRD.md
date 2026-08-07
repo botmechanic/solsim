@@ -356,13 +356,15 @@ Ship that loop. Everything else is bonus.
 - Browse plans + plan detail with **total breakdown before sign**
 - Catalog from **`GET /v1/plans`** when API is up; offline mock fallback
 - Devnet purchase (memo + SOL transfer) + mock provision + local ownership vault
+- **`POST /v1/mints`** — Metaplex Token Metadata NFT to buyer after payment verify
 - My eSIMs + owner-gated QR reveal
 - **`FLAG_SECURE`** on QR screen (Android native module)
 - **Install guide** screen (Android steps)
-- **Solscan** links (payment tx, wallet address)
+- **Solscan** links (payment tx, NFT mint, wallet address)
 - **Share** address / LPA string
 - Wallet **balance refresh on focus**
-- Minimal **`/api`**: health, plans, MockProvider, log redactor, AES-256-GCM helpers
+- Minimal **`/api`**: health, plans, mint, MockProvider, log redactor, AES-256-GCM helpers
+- Flat polished UI (DM Sans)
 
 ### Next lowest-hanging (still high demo value)
 
@@ -370,7 +372,7 @@ Ship that loop. Everything else is bonus.
 | --- | --- | --- |
 | Postgres + migrate runner | Original §1.2 / purchase table | Medium |
 | Signed-message auth middleware | Original §5.1 | Medium |
-| Metaplex mint on devnet | Phantom-visible NFT | Medium–large |
+| Collection NFT / verified creator | Filter wallet NFTs | Medium |
 | `GET /esims/:mint/qr` with chain owner check | Wire existing `decryptQrPayload` | Medium |
 
 ### Explicitly deferred (original phases 3–4)

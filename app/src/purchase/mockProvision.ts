@@ -14,8 +14,9 @@ export function provisionMockEsim(
   plan: EsimPlan,
   owner: string,
   paymentSignature: string,
+  mint?: string,
 ): OwnedEsim {
-  const mint = Keypair.generate().publicKey.toBase58();
+  const resolvedMint = mint ?? Keypair.generate().publicKey.toBase58();
   const iccid = `8901${randomDigits(15)}`;
   const activationCode = `DEMO${randomDigits(8)}`;
   const validUntil = new Date(
@@ -23,7 +24,7 @@ export function provisionMockEsim(
   ).toISOString();
 
   return {
-    mint,
+    mint: resolvedMint,
     owner,
     planId: plan.planId,
     country: plan.country,

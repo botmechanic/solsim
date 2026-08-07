@@ -1,4 +1,16 @@
-export type CountryCode = 'TH' | 'JP';
+export type CountryCode =
+  | 'TH'
+  | 'JP'
+  | 'US'
+  | 'KR'
+  | 'SG'
+  | 'VN'
+  | 'FR'
+  | 'DE'
+  | 'GB'
+  | 'AU'
+  | 'MX'
+  | 'BR';
 
 export interface EsimPlan {
   planId: string;
