@@ -48,6 +48,24 @@ flowchart TB
 
 **Invariant:** payment + NFT ownership are on-chain; the LPA / QR payload never goes in NFT metadata or public logs.
 
+## App screens (for judges)
+
+Demo path on Android — browse → buy/demo → owner-only QR → install guide.
+
+| Plans catalog | Plan detail |
+| :---: | :---: |
+| ![Plans](./docs/screenshots/01-plans.png) | ![Plan detail](./docs/screenshots/02-plan-detail.png) |
+
+| Provisioning | Owner-only QR |
+| :---: | :---: |
+| ![Provisioning](./docs/screenshots/03-provisioning.png) | ![Reveal QR](./docs/screenshots/04-reveal-qr.png) |
+
+<p align="center">
+  <img src="./docs/screenshots/05-install-guide.png" alt="Install guide" width="360" />
+</p>
+
+<p align="center"><em>Install guide — walk the Android eSIM steps; tonight’s LPA is a mock profile.</em></p>
+
 ## Documentation
 
 | Doc | Contents |
