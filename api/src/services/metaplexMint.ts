@@ -6,10 +6,10 @@ import {
   publicKey,
 } from '@metaplex-foundation/umi';
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
-import { clusterApiUrl } from '@solana/web3.js';
 import bs58 from 'bs58';
 import type { EsimPlan } from '../types.js';
 import { ApiError } from '../middleware/errors.js';
+import { getSolanaRpcUrl } from '../config/rpc.js';
 import { planDisplayName, planMetadataSlug } from './catalog.js';
 
 function metadataBaseUrl(): string {
@@ -52,7 +52,7 @@ export async function mintEsimNft(params: {
   owner: string;
   plan: EsimPlan;
 }): Promise<MintResult> {
-  const endpoint = process.env.SOLANA_RPC_URL || clusterApiUrl('devnet');
+  const endpoint = getSolanaRpcUrl();
   const umi = createUmi(endpoint).use(mplTokenMetadata());
 
   const secret = loadMintAuthoritySecret();

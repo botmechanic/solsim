@@ -109,6 +109,13 @@ export function WalletScreen() {
         <Text style={styles.metaValue}>Solana Devnet</Text>
         <Text style={[styles.label, styles.spaced]}>Chain</Text>
         <Text style={styles.metaValue}>{SOLANA_CHAIN}</Text>
+        <Text style={[styles.label, styles.spaced]}>RPC</Text>
+        <Text style={styles.metaValue}>QuickNode</Text>
+        <Pressable
+          onPress={() => Linking.openURL('https://www.quicknode.com')}
+          hitSlop={8}>
+          <Text style={styles.link}>Infrastructure by QuickNode</Text>
+        </Pressable>
       </View>
     </ScrollView>
   );

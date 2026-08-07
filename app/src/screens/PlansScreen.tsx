@@ -91,7 +91,8 @@ export function PlansScreen({ navigation }: Props) {
               ]}
             />
             <Text style={styles.sourceText}>
-              {source === 'api' ? 'Live API' : 'Offline catalog'} · Devnet
+              {source === 'api' ? 'Live API' : 'Offline catalog'} · QuickNode ·
+              Devnet
             </Text>
           </View>
         ) : null}

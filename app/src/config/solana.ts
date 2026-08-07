@@ -1,7 +1,14 @@
 import { clusterApiUrl, Connection, type BlockhashWithExpiryBlockHeight } from '@solana/web3.js';
 
-/** Public Solana RPC endpoints — try backups when one rate-limits. */
+/**
+ * Devnet RPC pool — QuickNode first (hackathon sponsor), then public fallbacks.
+ * The QuikNode path segment is an access token; rotate after the event if the repo is public.
+ */
+export const QUICKNODE_DEVNET_RPC =
+  'https://twilight-frosty-bush.solana-devnet.quiknode.pro/668d799bb5f19fa09864f178c35a98fad3de01d6/';
+
 const DEVNET_RPCS = [
+  QUICKNODE_DEVNET_RPC,
   clusterApiUrl('devnet'),
   'https://api.devnet.solana.com',
 ];
@@ -27,7 +34,7 @@ export type LatestBlockhashResult = {
 
 /** Fetch a recent blockhash with retries across fallback RPCs. */
 export async function fetchLatestBlockhash(
-  attempts = 3,
+  attempts = 4,
 ): Promise<LatestBlockhashResult> {
   let lastError: unknown;
   for (let i = 0; i < attempts; i += 1) {

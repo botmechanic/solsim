@@ -2,14 +2,13 @@ import {
   Connection,
   PublicKey,
   SystemProgram,
-  clusterApiUrl,
   type ParsedTransactionWithMeta,
 } from '@solana/web3.js';
 import { ApiError } from '../middleware/errors.js';
+import { getSolanaRpcUrl } from '../config/rpc.js';
 
 export function getConnection(): Connection {
-  const endpoint = process.env.SOLANA_RPC_URL || clusterApiUrl('devnet');
-  return new Connection(endpoint, 'confirmed');
+  return new Connection(getSolanaRpcUrl(), 'confirmed');
 }
 
 export function getTreasuryPubkey(): PublicKey {

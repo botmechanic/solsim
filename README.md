@@ -4,6 +4,8 @@
 
 Hackathon MVP: browse plans, pay on **Solana devnet**, mint a **real Metaplex NFT** to the buyer, reveal a **mock LPA QR** only to the owning wallet. Production path: wholesale eSIM API, mainnet USDC/SKR, Solana dApp Store.
 
+**Sponsors infra:** Solana RPC via [QuickNode](https://www.quicknode.com) (devnet).
+
 ## Architecture
 
 ```mermaid
@@ -35,6 +37,9 @@ flowchart TB
     Tx["Payment tx<br/>memo + transfer"]
     NFT["eSIM entitlement NFT"]
     Meta["NFT metadata<br/>GitHub raw JSON/SVG<br/>no QR in metadata"]
+    Rpc["RPC · QuickNode"]
+    Tx --- Rpc
+    NFT --- Rpc
   end
 
   UI -->|"catalog / mint"| api

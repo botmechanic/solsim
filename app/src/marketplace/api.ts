@@ -12,7 +12,14 @@ export async function fetchMarketplaceConfig(): Promise<MarketplaceConfig> {
 }
 
 export async function fetchListings(): Promise<MarketplaceListing[]> {
-  const res = await fetch(`${API_BASE_URL}/v1/listings`);
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/v1/listings`);
+  } catch {
+    throw new Error(
+      'Cannot reach Solsim API. On the computer: cd api && npm run start. Then: adb reverse tcp:8787 tcp:8787',
+    );
+  }
   if (!res.ok) {
     throw new Error('Could not load marketplace listings.');
   }
@@ -33,11 +40,18 @@ export async function createListing(body: {
   qrPayload: string;
   demo: boolean;
 }): Promise<MarketplaceListing> {
-  const res = await fetch(`${API_BASE_URL}/v1/listings`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/v1/listings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new Error(
+      'Cannot reach Solsim API. On the computer: cd api && npm run dev. Then: adb reverse tcp:8787 tcp:8787',
+    );
+  }
   if (!res.ok) {
     const text = await res.text();
     throw new Error(parseApiError(text) || 'Could not create listing.');
