@@ -140,7 +140,7 @@ export function RootNavigator() {
   return (
     <NavigationContainer theme={navTheme}>
       <Tab.Navigator
-        initialRouteName="Marketplace"
+        initialRouteName="Plans"
         screenOptions={{
           headerShown: false,
           tabBarStyle: styles.tabBar,
@@ -148,22 +148,22 @@ export function RootNavigator() {
           tabBarInactiveTintColor: colors.tabInactive,
         }}>
         <Tab.Screen
-          name="Marketplace"
-          component={MarketplaceStackNavigator}
-          options={{
-            tabBarIcon: ({ focused }) => <MarketTabIcon focused={focused} />,
-            tabBarLabel: ({ focused }) => (
-              <TabLabel label="Market" focused={focused} />
-            ),
-          }}
-        />
-        <Tab.Screen
           name="Plans"
           component={PlansStackNavigator}
           options={{
             tabBarIcon: ({ focused }) => <PlansTabIcon focused={focused} />,
             tabBarLabel: ({ focused }) => (
               <TabLabel label="Plans" focused={focused} />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="Marketplace"
+          component={MarketplaceStackNavigator}
+          options={{
+            tabBarIcon: ({ focused }) => <MarketTabIcon focused={focused} />,
+            tabBarLabel: ({ focused }) => (
+              <TabLabel label="Market" focused={focused} />
             ),
           }}
         />
@@ -187,8 +187,7 @@ export function RootNavigator() {
               <TabLabel label="Wallet" focused={focused} />
             ),
           }}
-        />
-      </Tab.Navigator>
+        />      </Tab.Navigator>
     </NavigationContainer>
   );
 }

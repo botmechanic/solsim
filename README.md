@@ -13,7 +13,7 @@ Hackathon MVP: browse **20 plans / 12 countries**, pay on **Solana devnet**, min
 ```mermaid
 flowchart TB
   subgraph client ["Android app (React Native)"]
-    UI["Market · Plans · My eSIMs · Wallet"]
+    UI["Plans · Market · My eSIMs · Wallet"]
     MWA["Mobile Wallet Adapter"]
     Vault["Encrypted local vault<br/>owner + LPA QR off-chain"]
     UI --> MWA
@@ -65,7 +65,7 @@ flowchart TB
 
 ## App screens (for judges)
 
-Demo path on Android — **open Market first** → buy leftover → or retail buy → owner-only QR → install guide.
+Demo path on Android — browse Plans → buy/demo → owner-only QR → sell leftover on Market.
 
 | Plans catalog | Plan detail |
 | :---: | :---: |
@@ -161,7 +161,7 @@ adb reverse tcp:8787 tcp:8787
 
 ### Demo loop
 
-- Bottom tabs: **Market / Plans / My eSIMs / Wallet** (Market is first)
+- Bottom tabs: **Plans / Market / My eSIMs / Wallet** (Plans opens by default)
 - **Market** — seed leftover listing; Demo buy or live Buy with SOL to seller
 - **My eSIMs → Sell leftover** — soft-list (demo mint) or deposit NFT to escrow (live)
 - MWA connect + **Buy with SOL** (memo + transfer on devnet) for retail

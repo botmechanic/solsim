@@ -254,7 +254,7 @@ solsim/
 ```
 ┌─────────────────────────────────────────┐
 │  React Native app (Android)             │
-│  - Tabs: Market · Plans · My eSIMs · Wallet │
+│  - Tabs: Plans · Market · My eSIMs · Wallet │
 │  - Mobile Wallet Adapter → Phantom      │
 │  - Signs txns, never holds keys         │
 └───────────────┬─────────────────────────┘
@@ -488,7 +488,7 @@ PROVIDER_MODE=mock
 3. Pay on devnet and complete purchase (or Demo mode)
 4. See eSIM under My eSIMs (NFT mint visible when live)
 5. Open mock QR as owner
-6. **Market opens first** — buy a leftover (Demo or live)
+6. Buy a leftover from **Market** (Demo or live)
 7. **Sell leftover** from My eSIMs appears on Market
 
 ---
@@ -515,7 +515,7 @@ PROVIDER_MODE=mock
 - Devnet purchase (memo + SOL transfer) + mock provision + local ownership vault
 - **`POST /v1/mints`** — Metaplex Token Metadata NFT to buyer after payment verify
 - My eSIMs + owner-gated QR reveal + **Sell leftover**
-- **Marketplace tab** (first): list leftovers, Demo/live buy, seed listing for cold open
+- **Marketplace tab**: list leftovers, Demo/live buy, seed listing for cold open
 - Live list: NFT deposit to mint-authority escrow; buy pays seller; `transferV1` claim + QR handoff
 - Soft Demo listings (no on-chain escrow) for pitch reliability
 - Mock `dataRemainingMb` (~60% left) so sell UX matches the “unused data” story

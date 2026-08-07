@@ -4,7 +4,7 @@
 
 > Every traveler overbuys mobile data and eats the loss. Solsim makes your eSIM an NFT, so unused data has a resale market instead of an expiration date.
 
-**Open on the Market tab first** — leftover listings, not retail purchase.
+**Open on the Plans tab.** For the resale pitch, switch to **Market** (or sell from My eSIMs).
 
 ## Setup before judging
 

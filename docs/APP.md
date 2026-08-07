@@ -69,8 +69,8 @@ src/
 
 | Tab | Hackathon (shipped) | Production |
 |---|---|---|
-| **Market** *(first)* | Leftover listings; Demo / live buy from seller | Full secondary market + usage-backed remaining GB |
-| **Plans** | Browse 20 plans → Buy with SOL (or Demo) → provision | Live catalog; country search |
+| **Plans** *(default on open)* | Browse 20 plans → Buy with SOL (or Demo) → provision | Live catalog; country search |
+| **Market** | Leftover listings; Demo / live buy from seller | Full secondary market + usage-backed remaining GB |
 | **My eSIMs** | Owned profiles → Reveal QR; **Sell leftover** | NFT-backed + install / live usage |
 | **Wallet** | MWA connect; pubkey + SOL; QuickNode credit | + USDC; SKR stake status |
 
