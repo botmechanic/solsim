@@ -18,10 +18,12 @@ react {
     // cliFile = file("../../node_modules/react-native/cli.js")
 
     /* Variants */
-    //   The list of variants to that are debuggable. For those we're going to
-    //   skip the bundling of the JS bundle and the assets. Default is "debug", "debugOptimized".
-    //   If you add flavors like lite, prod, etc. you'll have to list your debuggableVariants.
-    // debuggableVariants = ["liteDebug", "liteDebugOptimized", "prodDebug", "prodDebugOptimized"]
+    //   Debuggable variants skip embedding the JS bundle (need Metro).
+    //   Empty list → every variant embeds the bundle (Metro-free launch).
+    //   Used by: SOLSIM_STABLE=1 npm run android:stable
+    if (System.getenv("SOLSIM_STABLE") == "1") {
+        debuggableVariants = []
+    }
 
     /* Bundling */
     //   A list containing the node command and its flags. Default is just 'node'.

@@ -20,6 +20,12 @@ export const DESTINATIONS: Record<CountryCode, DestinationTheme> = {
   BR: { code: 'BR', name: 'Brazil' },
 };
 
-export function destinationFor(country: CountryCode): DestinationTheme {
-  return DESTINATIONS[country];
+export function destinationFor(
+  country: CountryCode | string,
+): DestinationTheme {
+  const known = DESTINATIONS[country as CountryCode];
+  if (known) {
+    return known;
+  }
+  return { code: country as CountryCode, name: country };
 }

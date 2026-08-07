@@ -43,10 +43,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
     }
     setBusy(true);
     try {
-      await connect();
-      return true;
-    } catch {
-      return false;
+      return await connect();
     } finally {
       setBusy(false);
     }
@@ -54,7 +51,7 @@ export function PlanDetailScreen({ navigation, route }: Props) {
 
   const onBuy = async () => {
     const ok = await ensureWallet();
-    if (!ok && !publicKey) {
+    if (!ok) {
       return;
     }
     if (balanceLamports !== null && !canAfford) {
@@ -139,8 +136,8 @@ export function PlanDetailScreen({ navigation, route }: Props) {
         style={styles.demo}
       />
       <Text style={styles.fine}>
-        Prefer Buy with SOL for a live signature. Demo skips payment if the
-        faucet is slow.
+        Demo still needs a connected wallet, then skips payment/mint. Prefer
+        Buy with SOL when faucet + API are healthy.
       </Text>
     </Screen>
   );

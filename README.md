@@ -58,12 +58,26 @@ NFT metadata JSON/SVG lives in `api/public/nft/` and is referenced via GitHub ra
 
 ## Run the app
 
+**Demo-stable (recommended for judging)** — embeds the JS bundle so Metro is not required:
+
+```bash
+cd app
+npm install
+npm run android:stable
+# optional for live mint API:
+adb reverse tcp:8787 tcp:8787
+```
+
+**Dev loop (hot reload)** — needs Metro running:
+
 ```bash
 cd app
 npm install
 npm start          # Metro
 # other terminal:
 npm run android
+adb reverse tcp:8081 tcp:8081
+adb reverse tcp:8787 tcp:8787
 ```
 
 Demo loop (done for judging):

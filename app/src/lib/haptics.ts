@@ -1,18 +1,26 @@
 import { Platform, Vibration } from 'react-native';
 
-/** Short success buzz — no extra deps. */
+/** Short success buzz — never throw (missing VIBRATE must not kill the buy flow). */
 export function hapticSuccess(): void {
-  if (Platform.OS === 'android') {
-    Vibration.vibrate(40);
-    return;
+  try {
+    if (Platform.OS === 'android') {
+      Vibration.vibrate(40);
+      return;
+    }
+    Vibration.vibrate(10);
+  } catch {
+    // Ignore — haptics are optional.
   }
-  Vibration.vibrate(10);
 }
 
 export function hapticError(): void {
-  if (Platform.OS === 'android') {
-    Vibration.vibrate([0, 40, 60, 40]);
-    return;
+  try {
+    if (Platform.OS === 'android') {
+      Vibration.vibrate([0, 40, 60, 40]);
+      return;
+    }
+    Vibration.vibrate(40);
+  } catch {
+    // Ignore — haptics are optional.
   }
-  Vibration.vibrate(40);
 }

@@ -30,7 +30,7 @@ type WalletContextValue = {
   authToken: string | null;
   connecting: boolean;
   balanceLamports: number | null;
-  connect: () => Promise<void>;
+  connect: () => Promise<boolean>;
   disconnect: () => Promise<void>;
   refreshBalance: () => Promise<void>;
   setSession: (publicKey: PublicKey, authToken: string) => Promise<void>;
@@ -79,35 +79,17 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       if (!stored || cancelled) {
         return;
       }
+      // Restore session locally — do not auto-open Phantom on cold start
+      // (that freezes launch and looks like a crash during demos).
       try {
-        setConnecting(true);
-        const result = await transact(async (wallet: Web3MobileWallet) => {
-          return wallet.authorize({
-            chain: SOLANA_CHAIN,
-            identity: APP_IDENTITY,
-            auth_token: stored.authToken,
-          });
-        });
+        const pubkey = new PublicKey(stored.publicKey);
         if (cancelled) {
           return;
         }
-        const pubkey = accountAddressToPublicKey(result.accounts[0].address);
         setPublicKey(pubkey);
-        setAuthToken(result.auth_token);
-        await saveAuthorization({
-          authToken: result.auth_token,
-          publicKey: pubkey.toBase58(),
-        });
+        setAuthToken(stored.authToken);
       } catch {
         await clearAuthorization();
-        if (!cancelled) {
-          setPublicKey(null);
-          setAuthToken(null);
-        }
-      } finally {
-        if (!cancelled) {
-          setConnecting(false);
-        }
       }
     })();
     return () => {
@@ -119,7 +101,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     refreshBalance().catch(() => undefined);
   }, [refreshBalance]);
 
-  const connect = useCallback(async () => {
+  const connect = useCallback(async (): Promise<boolean> => {
     setConnecting(true);
     try {
       const result = await transact(async (wallet: Web3MobileWallet) => {
@@ -129,13 +111,18 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           auth_token: authToken ?? undefined,
         });
       });
-      const pubkey = accountAddressToPublicKey(result.accounts[0].address);
+      const account = result.accounts[0];
+      if (!account?.address) {
+        throw new Error('Wallet returned no accounts.');
+      }
+      const pubkey = accountAddressToPublicKey(account.address);
       setPublicKey(pubkey);
       setAuthToken(result.auth_token);
       await saveAuthorization({
         authToken: result.auth_token,
         publicKey: pubkey.toBase58(),
       });
+      return true;
     } catch (error) {
       if (isNoWalletError(error)) {
         Alert.alert(
@@ -156,6 +143,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           error instanceof Error ? error.message : 'Could not connect wallet.';
         Alert.alert('Connection failed', message);
       }
+      return false;
     } finally {
       setConnecting(false);
     }

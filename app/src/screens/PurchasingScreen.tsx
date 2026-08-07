@@ -32,8 +32,8 @@ import type { PlansStackParamList } from '../navigation/types';
 type Props = NativeStackScreenProps<PlansStackParamList, 'Purchasing'>;
 
 const STEPS: { id: PurchaseStep; label: string }[] = [
-  { id: 'authorizing', label: 'Authorize wallet' },
-  { id: 'signing', label: 'Sign payment' },
+  { id: 'authorizing', label: 'Prepare payment' },
+  { id: 'signing', label: 'Approve in Phantom' },
   { id: 'confirming', label: 'Confirm on-chain' },
   { id: 'minting', label: 'Mint NFT' },
   { id: 'provisioning', label: 'Provision profile' },
@@ -214,6 +214,16 @@ export function PurchasingScreen({ navigation, route }: Props) {
         })}
       </View>
 
+      {!error && !done && activeIdx >= 0 ? (
+        <Text style={styles.waitHint}>
+          {step === 'signing'
+            ? 'Phantom should be open — Approve the small SOL transfer, then return here.'
+            : step === 'authorizing'
+              ? 'Fetching a fresh blockhash…'
+              : 'Working…'}
+        </Text>
+      ) : null}
+
       {error ? (
         <View style={styles.errorBox}>
           <Text style={styles.error}>{error}</Text>
@@ -224,8 +234,9 @@ export function PurchasingScreen({ navigation, route }: Props) {
             </Text>
           ) : (
             <Text style={styles.hint}>
-              Top up via the Solana faucet, then retry — or use Demo mode from
-              the plan screen.
+              When step 2 is spinning, Phantom should be open — Approve the
+              small SOL transfer. If you cancelled, tap Back and try again. Or
+              use Demo mode from the plan screen.
             </Text>
           )}
           {canRetryMint ? (
@@ -391,6 +402,11 @@ const styles = StyleSheet.create({
   hint: {
     ...type.caption,
     color: colors.textSecondary,
+  },
+  waitHint: {
+    ...type.caption,
+    color: colors.textSecondary,
+    marginTop: space.xl,
   },
   successBox: {
     marginTop: space.xl,

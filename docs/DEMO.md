@@ -8,11 +8,20 @@ Open on the **Plans** tab — clean flat UI, Solsim wordmark + one-line pitch be
 
 ## Setup before judging
 
-1. Emulator or Android device with Phantom (or Mock MWA Wallet)
-2. Devnet SOL in that wallet — [faucet.solana.com](https://faucet.solana.com)
-3. API running with funded mint authority (`cd api && npm run dev`)
-4. `adb reverse tcp:8081 tcp:8081` and `adb reverse tcp:8787 tcp:8787`
-5. `cd app && npm start` + `npm run android`
+1. Android device with **Phantom** (preferred), or emulator with **Mock MWA Wallet**
+2. Devnet SOL in that wallet — [faucet.solana.com](https://faucet.solana.com) (live Buy only)
+3. API running with funded mint authority (`cd api && npm run dev`) — live mint only
+4. Install a **Metro-free** build: `cd app && npm run android:stable`
+5. `adb reverse tcp:8787 tcp:8787` (only needed for live mint / live catalog)
+
+You do **not** need Metro or `adb reverse 8081` for `android:stable`.
+
+### Emulator + Demo mode (no Phantom)
+
+1. Install [Mock MWA Wallet](https://github.com/solana-mobile/mock-mwa-wallet) on the AVD (`com.solana.mwallet`)
+2. Set a device PIN; open **mwallet** → **Authenticate** (don’t open the QR scanner — it’s black without a camera)
+3. Solsim → Connect → approve in mwallet
+4. Plan detail → **Demo mode** → Reveal QR
 
 ## Live path (preferred)
 
@@ -25,7 +34,7 @@ Open on the **Plans** tab — clean flat UI, Solsim wordmark + one-line pitch be
 
 ## Fallback if faucet / API is down
 
-Plan detail → **Demo mode** — binds a mock eSIM locally (no real mint). Call it out honestly.
+Plan detail → **Demo mode** — binds a mock eSIM locally (no real mint). Call it out honestly. Still requires a connected wallet (Mock MWA is fine).
 
 ## What to emphasize
 
